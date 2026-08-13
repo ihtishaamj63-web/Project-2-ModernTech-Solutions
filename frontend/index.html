@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ModernTech Solutions | Dashboard</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="shared.css" />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
+    <style>
+      .dash-stat-link {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: 0.2s;
+      }
+      .dash-stat-link:hover {
+        text-decoration: underline;
+      }
+      .dash-stat-link.blue-link {
+        color: #3b82f6;
+      }
+      .dash-stat-link.purple-link {
+        color: #8b5cf6;
+      }
+      .dash-stat-link.orange-link {
+        color: #f59e0b;
+      }
+      .dash-stat-link.green-link {
+        color: #10b981;
+      }
+      .dash-chart-header a {
+        text-decoration: none;
+        color: #272757;
+        font-weight: 600;
+        font-size: 13px;
+        transition: 0.2s;
+      }
+      .dash-chart-header a:hover {
+        color: #505081;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <span class="brand-text">ModernTech <span>Solutions</span></span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <div class="mx-auto">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link active" href="index.html"
+                  ><i class="bi bi-grid-1x2-fill"></i> Dashboard</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="employees.html"
+                  ><i class="bi bi-people-fill"></i> Employees</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="payroll.html"
+                  ><i class="bi bi-wallet2"></i> Payroll</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="timeoff.html"
+                  ><i class="bi bi-clock-fill"></i> Time Off</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="attendance.html"
+                  ><i class="bi bi-calendar-check-fill"></i> Attendance</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="reviews.html"
+                  ><i class="bi bi-star-fill"></i> Review</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <button
+              class="btn btn-toggle"
+              id="nightModeToggle"
+              title="Toggle Night Mode"
+            >
+              <i class="bi bi-moon-fill"></i>
+            </button>
+            <div class="user-profile">
+              <div class="user-avatar">HR</div>
+              <div class="user-info">
+                <div class="user-name">HR Administrator</div>
+                <div class="user-role">Human Resources</div>
+              </div>
+            </div>
+            <button class="btn btn-logout" id="logoutBtn" title="Logout">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="modal fade" id="notificationModal" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="background: var(--primary); color: white"
+          >
+            <h5 class="modal-title">
+              <i class="bi bi-bell me-2"></i>Notifications
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="notificationList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <section class="dash-hero">
+      <h5>MODERNTECH SOLUTIONS</h5>
+      <h1 id="dashGreeting">Welcome back, Administrator.</h1>
+      <p
+        style="
+          font-size: 16px;
+          color: rgba(255, 255, 255, 0.7);
+          margin-bottom: 15px;
+        "
+      >
+        <i class="bi bi-calendar3 me-1"></i> <span id="dashTodayDate"></span>
+      </p>
+      <p id="dashHeroSub">
+        Manage employee records, performance reviews and payroll from one
+        centralized HR dashboard.
+      </p>
+      <div class="dash-hero-buttons">
+        <button
+          id="heroEmployeesBtn"
+          onclick="location.href = 'employees.html'"
+        >
+          Employee Records
+        </button>
+        <button id="heroPayrollBtn" onclick="location.href = 'payroll.html'">
+          Open Payroll
+        </button>
+      </div>
+    </section>
+
+    <!-- STATISTICS -->
+    <section
+      class="dash-stats"
+      style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"
+    >
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon blue"><i class="fa-solid fa-users"></i></div>
+        <h4>Total Employees</h4>
+        <h2 id="dashTotalEmployees">10</h2>
+        <a href="employees.html" class="dash-stat-link blue-link"
+          >View Employees →</a
+        >
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon purple">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <h4>Attendance Rate</h4>
+        <h2 id="dashAttRate">80%</h2>
+        <p>This Week</p>
+        <a href="attendance.html" class="dash-stat-link purple-link"
+          >View Attendance →</a
+        >
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon orange">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <h4>Pending Requests</h4>
+        <h2 id="dashPendingCount">5</h2>
+        <p>Time Off</p>
+        <a href="timeoff.html" class="dash-stat-link orange-link"
+          >Manage Requests →</a
+        >
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon green"><i class="fa-solid fa-star"></i></div>
+        <h4>Completed Reviews</h4>
+        <h2 id="dashReviewCount">4</h2>
+        <p>This Quarter</p>
+        <a href="reviews.html" class="dash-stat-link green-link"
+          >View Reviews →</a
+        >
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon blue">
+          <i class="fa-solid fa-money-bill-wave"></i>
+        </div>
+        <h4>Payroll Summary</h4>
+        <h2 id="dashPayrollTotal">R38 600</h2>
+        <p>10 Employees Paid</p>
+        <a href="payroll.html" class="dash-stat-link blue-link"
+          >Open Payroll →</a
+        >
+      </div>
+    </section>
+
+    <!-- ATTENDANCE CHART -->
+    <div class="dash-chart-card">
+      <div
+        class="dash-chart-header"
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <h2>This Week at a Glance</h2>
+        <div style="display: flex; align-items: center; gap: 15px">
+          <span class="badge bg-secondary">10 employees</span>
+          <a href="attendance.html">View Full Report →</a>
+        </div>
+      </div>
+      <div id="homeWeeklyChart" style="padding: 16px 0 8px"></div>
+    </div>
+
+    <!-- TWO COLUMN -->
+    <div
+      class="dash-two-col"
+      style="
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin: 40px;
+      "
+    >
+      <section class="dash-reviews" style="margin: 0">
+        <div class="dash-reviews-header">
+          <h2>Recent Time Off Requests</h2>
+          <a href="timeoff.html">View All →</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Type</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="dashTimeOffContainer">
+            <tr>
+              <td colspan="4" class="text-center text-muted">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="dash-reviews" style="margin: 0">
+        <div class="dash-reviews-header">
+          <h2>Recent Performance Reviews</h2>
+          <a href="reviews.html">View All →</a>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Department</th>
+              <th>Rating</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="dashReviewsContainer">
+            <tr>
+              <td colspan="4" class="text-center text-muted">Loading...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="data.js"></script>
+    <script src="auth.js"></script>
+    <script src="utils.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ModernTech Solutions - Employees</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="shared.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#"
+          ><span class="brand-text">ModernTech <span>Solutions</span></span></a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <div class="mx-auto">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link" href="index.html"
+                  ><i class="bi bi-grid-1x2-fill"></i> Dashboard</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="employees.html"
+                  ><i class="bi bi-people-fill"></i> Employees</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="payroll.html"
+                  ><i class="bi bi-wallet2"></i> Payroll</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="timeoff.html"
+                  ><i class="bi bi-clock-fill"></i> Time Off</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="attendance.html"
+                  ><i class="bi bi-calendar-check-fill"></i> Attendance</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="reviews.html"
+                  ><i class="bi bi-star-fill"></i> Review</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <button
+              class="btn btn-toggle"
+              id="empNightModeToggle"
+              title="Toggle Night Mode"
+            >
+              <i class="bi bi-moon-fill"></i>
+            </button>
+            <div class="user-profile">
+              <div class="user-avatar">HR</div>
+              <div class="user-info">
+                <div class="user-name">HR Administrator</div>
+                <div class="user-role">Human Resources</div>
+              </div>
+            </div>
+            <button class="btn btn-logout" id="logoutBtn" title="Logout">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="emp-page">
+      <div class="container">
+        <div class="emp-page__header">
+          <p class="emp-page__date">
+            <i class="bi bi-calendar3 me-1"></i>
+            <span id="empPageDate"></span>
+          </p>
+          <h1 class="emp-page__title">Employees</h1>
+          <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px">
+            Manage employee records, filter staff by department, and add new
+            employees.
+          </p>
+        </div>
+
+        <div class="emp-toolbar">
+          <div class="emp-search-bar">
+            <i class="bi bi-search"></i>
+            <input
+              type="search"
+              id="employee-searchInput"
+              placeholder="Search by name, position, department or ID"
+            />
+          </div>
+          <div class="emp-toolbar__actions">
+            <a href="add-employee.html" class="emp-btn emp-btn--primary"
+              ><i class="bi bi-plus-lg"></i> Add Employee</a
+            >
+          </div>
+        </div>
+
+        <div class="emp-filters" id="employee-deptFilters"></div>
+
+        <div class="emp-card-wrap">
+          <div class="emp-card__head">
+            <h2>Employee Directory</h2>
+            <span class="emp-card__count" id="employee-count">0 employees</span>
+          </div>
+          <div class="emp-list" id="employee-list"></div>
+        </div>
+      </div>
+    </main>
+
+    <div id="employee-toastContainer"></div>
+
+    <div class="emp-modal hidden" id="employee-deleteModal">
+      <div class="emp-modal__backdrop"></div>
+      <div class="emp-modal__content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Employee</h5>
+        </div>
+        <div class="modal-body">
+          <p>
+            Are you sure you want to remove this employee? This action cannot be
+            undone.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="employee-cancelDelete"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            id="employee-confirmDelete"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="data.js"></script>
+    <script src="auth.js"></script>
+    <script src="utils.js"></script>
+    <script src="employeescript.js"></script>
+  </body>
+</html>

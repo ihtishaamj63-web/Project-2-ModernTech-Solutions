@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ModernTech Solutions - Add Employee</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="shared.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <span class="brand-text">ModernTech <span>Solutions</span></span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <div class="mx-auto">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link" href="index.html"
+                  ><i class="bi bi-grid-1x2-fill"></i> Dashboard</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="employees.html"
+                  ><i class="bi bi-people-fill"></i> Employees</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="payroll.html"
+                  ><i class="bi bi-wallet2"></i> Payroll</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="timeoff.html"
+                  ><i class="bi bi-clock-fill"></i> Time Off</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="attendance.html"
+                  ><i class="bi bi-calendar-check-fill"></i> Attendance</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="reviews.html"
+                  ><i class="bi bi-star-fill"></i> Review</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <button
+              class="btn btn-toggle"
+              id="empNightModeToggle"
+              title="Toggle Night Mode"
+            >
+              <i class="bi bi-moon-fill"></i>
+            </button>
+            <div class="user-profile">
+              <div class="user-avatar">HR</div>
+              <div class="user-info">
+                <div class="user-name">HR Administrator</div>
+                <div class="user-role">Human Resources</div>
+              </div>
+            </div>
+            <button class="btn btn-logout" id="logoutBtn" title="Logout">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="emp-page">
+      <div class="container">
+        <div class="emp-page__header">
+          <p class="emp-page__date" id="employee-todayDate"></p>
+          <h1 class="emp-page__title">Add New Employee</h1>
+          <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px">
+            New employees are automatically set to
+            <strong>Active</strong> status.
+          </p>
+        </div>
+
+        <div class="emp-card-wrap">
+          <form id="employee-addForm" class="emp-form-grid">
+            <div class="emp-form-group">
+              <label for="employee-name"
+                >Full Name <span style="color: #e53935">*</span></label
+              >
+              <input
+                type="text"
+                id="employee-name"
+                required
+                placeholder="e.g. Bongiwe Dube"
+              />
+            </div>
+            <div class="emp-form-group">
+              <label for="employee-position"
+                >Position <span style="color: #e53935">*</span></label
+              >
+              <select id="employee-position" required>
+                <option value="">Select Position</option>
+              </select>
+            </div>
+            <div class="emp-form-group">
+              <label for="employee-department"
+                >Department <span style="color: #e53935">*</span></label
+              >
+              <select id="employee-department" required>
+                <option value="">Select Department</option>
+                <option>Development</option>
+                <option>HR</option>
+                <option>QA</option>
+                <option>Sales</option>
+                <option>Marketing</option>
+                <option>Design</option>
+                <option>IT</option>
+                <option>Finance</option>
+                <option>Support</option>
+              </select>
+            </div>
+            <div class="emp-form-group">
+              <label for="employee-salary"
+                >Monthly Salary (R) <span style="color: #e53935">*</span></label
+              >
+              <input
+                type="number"
+                id="employee-salary"
+                required
+                min="5000"
+                max="500000"
+                step="1000"
+                placeholder="e.g. 45,000"
+                style="font-size: 16px"
+              />
+              <small
+                style="
+                  color: var(--text-muted);
+                  font-size: 11px;
+                  margin-top: 2px;
+                "
+              >
+                Use the dropdown below to select a salary range, or type
+                directly. Increments of R1,000.
+              </small>
+            </div>
+            <div class="emp-form-group">
+              <label for="employee-contact"
+                >Email <span style="color: #e53935">*</span></label
+              >
+              <input
+                type="email"
+                id="employee-contact"
+                required
+                placeholder="name@moderntech.com"
+              />
+            </div>
+            <div class="emp-form-group">
+              <label for="employee-startDate"
+                >Start Date <span style="color: #e53935">*</span></label
+              >
+              <input type="date" id="employee-startDate" required />
+            </div>
+            <div class="emp-form-group emp-form-group--full">
+              <label for="employee-history">Employment History</label>
+              <textarea
+                id="employee-history"
+                rows="3"
+                placeholder="e.g. Joined in 2026, bringing 5 years of industry experience..."
+              ></textarea>
+            </div>
+
+            <div class="emp-form-actions emp-form-group--full">
+              <a href="employees.html" class="emp-btn emp-btn--ghost">
+                <i class="bi bi-x-lg"></i> Cancel
+              </a>
+              <button type="submit" class="emp-btn emp-btn--primary">
+                <i class="bi bi-check-lg"></i> Save Employee
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <!-- TOAST CONTAINER -->
+    <div id="employee-toastContainer"></div>
+
+    <!-- NOTIFICATION MODAL -->
+    <div class="modal fade" id="empNotificationModal" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="background: var(--primary); color: white"
+          >
+            <h5 class="modal-title">
+              <i class="bi bi-bell me-2"></i>Notifications
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="empNotificationList"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="data.js"></script>
+    <script src="auth.js"></script>
+    <script src="utils.js"></script>
+    <script src="employeescript.js"></script>
+  </body>
+</html>

@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ModernTech Solutions | Reviews</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="shared.css" />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- ============================================================ -->
+    <!-- NAVIGATION -->
+    <!-- ============================================================ -->
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <span class="brand-text">ModernTech <span>Solutions</span></span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <div class="mx-auto">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link" href="index.html"
+                  ><i class="bi bi-grid-1x2-fill"></i> Dashboard</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="employees.html"
+                  ><i class="bi bi-people-fill"></i> Employees</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="payroll.html"
+                  ><i class="bi bi-wallet2"></i> Payroll</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="timeoff.html"
+                  ><i class="bi bi-clock-fill"></i> Time Off</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="attendance.html"
+                  ><i class="bi bi-calendar-check-fill"></i> Attendance</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="reviews.html"
+                  ><i class="bi bi-star-fill"></i> Review</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <button
+              class="btn btn-toggle"
+              id="nightModeToggle"
+              title="Toggle Night Mode"
+            >
+              <i class="bi bi-moon-fill"></i>
+            </button>
+            <div class="user-profile">
+              <div class="user-avatar">HR</div>
+              <div class="user-info">
+                <div class="user-name">HR Administrator</div>
+                <div class="user-role">Human Resources</div>
+              </div>
+            </div>
+            <button class="btn btn-logout" id="logoutBtn" title="Logout">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============================================================ -->
+    <!-- NOTIFICATION MODAL -->
+    <!-- ============================================================ -->
+    <div class="modal fade" id="notificationModal" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="background: var(--primary); color: white"
+          >
+            <h5 class="modal-title">
+              <i class="bi bi-bell me-2"></i>Notifications
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body" id="notificationList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================================ -->
+    <div class="rev-main">
+      <h1>Employee Performance Reviews</h1>
+      <p
+        style="
+          text-align: center;
+          color: var(--text-muted);
+          font-size: 14px;
+          margin-bottom: 20px;
+        "
+      >
+        <i class="bi bi-calendar3 me-1"></i> <span id="revPageDate"></span>
+      </p>
+
+      <div class="rev-search">
+        <input
+          type="text"
+          id="search"
+          placeholder="Search employee reviews..."
+        />
+        <button><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+      </div>
+
+      <div class="rev-actions">
+        <button id="revAddBtn">
+          <i class="fa-solid fa-plus"></i> Add New Review
+        </button>
+      </div>
+
+      <!-- Reviews Table -->
+      <div class="rev-card" style="padding: 0; overflow: hidden">
+        <div class="table-responsive">
+          <table class="att-table table" style="margin: 0">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Department</th>
+                <th>Reviewer</th>
+                <th>Date</th>
+                <th>Rating</th>
+                <th>Comments</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="reviewsTableBody">
+              <tr>
+                <td>
+                  <div class="att-employee-cell">
+                    <div
+                      class="att-employee-avatar"
+                      style="background: #10b981"
+                    >
+                      ZK
+                    </div>
+                    <span class="att-employee-name">Zanele Khumalo</span>
+                  </div>
+                </td>
+                <td>Marketing</td>
+                <td>Angelo Martin</td>
+                <td>26-May-2026</td>
+                <td>⭐⭐⭐⭐</td>
+                <td>
+                  Great performance in Q2 campaigns. Shows strong leadership and
+                  initiative.
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm"
+                    style="background: #dc3545; color: white; border: none"
+                    onclick="deleteReview(this)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="att-employee-cell">
+                    <div
+                      class="att-employee-avatar"
+                      style="background: #3b82f6"
+                    >
+                      SN
+                    </div>
+                    <span class="att-employee-name">Sibongile Nkosi</span>
+                  </div>
+                </td>
+                <td>Development</td>
+                <td>Angelo Martin</td>
+                <td>26-May-2026</td>
+                <td>⭐⭐⭐⭐</td>
+                <td>
+                  Consistent code quality. Meets deadlines reliably. Good team
+                  player.
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm"
+                    style="background: #dc3545; color: white; border: none"
+                    onclick="deleteReview(this)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="att-employee-cell">
+                    <div
+                      class="att-employee-avatar"
+                      style="background: #8b5cf6"
+                    >
+                      KD
+                    </div>
+                    <span class="att-employee-name">Karabo Dlamini</span>
+                  </div>
+                </td>
+                <td>Finance</td>
+                <td>Angelo Martin</td>
+                <td>26-May-2026</td>
+                <td>⭐⭐⭐⭐</td>
+                <td>
+                  Excellent attention to detail. Handles financial reporting
+                  accurately.
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm"
+                    style="background: #dc3545; color: white; border: none"
+                    onclick="deleteReview(this)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="att-employee-cell">
+                    <div
+                      class="att-employee-avatar"
+                      style="background: #f59e0b"
+                    >
+                      FP
+                    </div>
+                    <span class="att-employee-name">Fatima Patel</span>
+                  </div>
+                </td>
+                <td>Support</td>
+                <td>Angelo Martin</td>
+                <td>26-May-2026</td>
+                <td>⭐⭐⭐⭐</td>
+                <td>
+                  Great customer satisfaction scores. Resolves tickets
+                  efficiently.
+                </td>
+                <td>
+                  <button
+                    class="btn btn-sm"
+                    style="background: #dc3545; color: white; border: none"
+                    onclick="deleteReview(this)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Download PDF -->
+      <div class="rev-download-section">
+        <button class="rev-download-btn" id="downloadPdfBtn">
+          <i class="fa-solid fa-file-pdf"></i> Download Reviews PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ADD REVIEW MODAL -->
+    <!-- ============================================================ -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div
+            class="modal-header"
+            style="background: var(--primary); color: white"
+          >
+            <h5 class="modal-title">Add New Review</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="reviewForm">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Employee</label>
+                <select class="form-select" id="employeeSelect" required>
+                  <option value="">Select employee...</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Rating</label>
+                <select class="form-select" id="rating" required>
+                  <option value="5">⭐⭐⭐⭐⭐</option>
+                  <option value="4">⭐⭐⭐⭐</option>
+                  <option value="3">⭐⭐⭐</option>
+                  <option value="2">⭐⭐</option>
+                  <option value="1">⭐</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Comments</label>
+                <textarea
+                  class="form-control"
+                  id="comments"
+                  rows="3"
+                  placeholder="Write performance review comments..."
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="saveReviewBtn">
+              Save Review
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="data.js"></script>
+    <script src="auth.js"></script>
+    <script src="utils.js"></script>
+    <script src="review.js"></script>
+  </body>
+</html>

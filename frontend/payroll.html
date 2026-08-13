@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ModernTech Solutions - Payroll</title>
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- SHARED CSS ONLY -->
+    <link rel="stylesheet" href="shared.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#"
+          ><span class="brand-text">ModernTech <span>Solutions</span></span></a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+          <div class="mx-auto">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a class="nav-link" href="index.html"
+                  ><i class="bi bi-grid-1x2-fill"></i> Dashboard</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="employees.html"
+                  ><i class="bi bi-people-fill"></i> Employees</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="payroll.html"
+                  ><i class="bi bi-wallet2"></i> Payroll</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="timeoff.html"
+                  ><i class="bi bi-clock-fill"></i> Time Off</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="attendance.html"
+                  ><i class="bi bi-calendar-check-fill"></i> Attendance</a
+                >
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="reviews.html"
+                  ><i class="bi bi-star-fill"></i> Review</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <button
+              class="btn btn-toggle"
+              id="payNightModeToggle"
+              title="Toggle Night Mode"
+            >
+              <i class="bi bi-moon-fill"></i>
+            </button>
+            <div class="user-profile">
+              <div class="user-avatar">HR</div>
+              <div class="user-info">
+                <div class="user-name">HR Administrator</div>
+                <div class="user-role">Human Resources</div>
+              </div>
+            </div>
+            <button class="btn btn-logout" id="logoutBtn" title="Logout">
+              <i class="bi bi-box-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="pay-container">
+      <h1 class="pay-title">Payroll</h1>
+      <p class="pay-date" style="font-size: 14px; color: var(--text-muted)">
+        <i class="bi bi-calendar3 me-1"></i> <span id="payPageDate"></span>
+      </p>
+
+      <div class="pay-stats">
+        <div class="pay-stat-card">
+          <div>
+            <div class="pay-stat-label">TOTAL MONTHLY GROSS</div>
+            <div class="pay-stat-value" id="totalGross">R0</div>
+            <div class="pay-stat-sub">July 2026 projection</div>
+          </div>
+          <div class="pay-stat-icon"><i class="bi bi-wallet2"></i></div>
+        </div>
+        <div class="pay-stat-card">
+          <div>
+            <div class="pay-stat-label">EMPLOYEES ON PAYROLL</div>
+            <div class="pay-stat-value" id="totalCount">0</div>
+            <div class="pay-stat-sub">All active contracts</div>
+          </div>
+          <div class="pay-stat-icon"><i class="bi bi-people-fill"></i></div>
+        </div>
+        <div class="pay-stat-card">
+          <div>
+            <div class="pay-stat-label">NEXT PAY DATE</div>
+            <div class="pay-stat-value">25 Jul</div>
+            <div class="pay-stat-sub">EFT processed automatically</div>
+          </div>
+          <div class="pay-stat-icon">
+            <i class="bi bi-calendar-check-fill"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="pay-card">
+        <div class="pay-card-header">
+          <div>
+            <div class="pay-card-title">June payslip register</div>
+            <div class="pay-card-sub">
+              Click a row to preview the digital payslip
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <div class="pay-search-box">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="Search employee or dept"
+              />
+            </div>
+            <button
+              class="btn btn-outline-primary btn-sm"
+              onclick="exportCSV()"
+            >
+              <i class="bi bi-download me-1"></i> Export Excel
+            </button>
+          </div>
+        </div>
+        <div class="pay-table-scroll">
+          <table class="pay-table">
+            <thead>
+              <tr>
+                <th>EMPLOYEE</th>
+                <th>HOURS</th>
+                <th>HOURLY</th>
+                <th>GROSS</th>
+                <th>DEDUCTIONS</th>
+                <th>NET PAY</th>
+              </tr>
+            </thead>
+            <tbody id="payBody"></tbody>
+          </table>
+        </div>
+        <div class="pay-table-footer" id="tableFooter"></div>
+      </div>
+    </div>
+
+    <div class="pay-modal" id="payslipModal">
+      <div class="pay-modal-card">
+        <div class="pay-modal-header">
+          <div
+            style="font-size: 12px; font-weight: 600; color: var(--text-muted)"
+          >
+            DIGITAL PAYSLIP
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span class="pay-slip-month">June 2026</span>
+            <button class="pay-modal-close" onclick="closePayslip()">
+              <svg
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                width="16"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="pay-modal-body" id="payslipBody"></div>
+      </div>
+    </div>
+
+    <div class="toast-container">
+      <div id="payToast" class="toast-custom">Payslip updated!</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="auth.js"></script>
+    <script src="utils.js"></script>
+    <script src="payroll.js"></script>
+  </body>
+</html>
