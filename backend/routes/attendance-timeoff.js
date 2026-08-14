@@ -1,7 +1,7 @@
 // Import what we need
 import express from 'express';
 import pool from '../config/database.js';
-import { authMiddleware } from '../middleware/auth.js';
+import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -12,14 +12,14 @@ const router = express.Router();
 // GET /api/attendance - Get all attendance records
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        // Get attendance with employee names
+        // Join attendance with employees to get names
         const [rows] = await pool.query(
             `SELECT a.*, e.first_name, e.last_name 
              FROM attendance a
              JOIN employees e ON a.emp_id = e.emp_id
              ORDER BY a.attendance_date DESC`
         );
-        
+
         res.json({ success: true, data: rows });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -30,28 +30,28 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
     try {
         const { emp_id, attendance_date, status, check_in_time, check_out_time, hours_worked, notes } = req.body;
-        
-        // Basic validation - make sure we have what we need
+
+        // Check required fields
         if (!emp_id || !attendance_date || !status) {
             return res.status(400).json({
                 success: false,
                 error: 'emp_id, attendance_date, and status are required'
             });
         }
-        
-        // Check if attendance already exists for this employee on this date
+
+        // Make sure no duplicate for same employee on same day
         const [existing] = await pool.query(
             'SELECT * FROM attendance WHERE emp_id = ? AND attendance_date = ?',
             [emp_id, attendance_date]
         );
-        
+
         if (existing.length > 0) {
             return res.status(409).json({
                 success: false,
                 error: 'Attendance already recorded for this employee on this date'
             });
         }
-        
+
         // Insert new attendance record
         const [result] = await pool.query(
             `INSERT INTO attendance 
@@ -59,7 +59,7 @@ router.post('/', authMiddleware, async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [emp_id, attendance_date, status, check_in_time || null, check_out_time || null, hours_worked || null, notes || null, req.user.user_id]
         );
-        
+
         res.status(201).json({
             success: true,
             message: 'Attendance logged successfully',
@@ -75,16 +75,16 @@ router.post('/', authMiddleware, async (req, res) => {
 // =========================================
 
 // GET /api/timeoff - Get all time-off requests
-router.get('/timeoff', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
     try {
-        // Get timeoff with employee names
+        // Join timeoff with employees to get names
         const [rows] = await pool.query(
             `SELECT t.*, e.first_name, e.last_name 
              FROM timeoff t
              JOIN employees e ON t.emp_id = e.emp_id
              ORDER BY t.request_date DESC`
         );
-        
+
         res.json({ success: true, data: rows });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
@@ -92,27 +92,27 @@ router.get('/timeoff', authMiddleware, async (req, res) => {
 });
 
 // POST /api/timeoff - Submit new time-off request
-router.post('/timeoff', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
     try {
         const { emp_id, start_date, end_date, timeoff_type, reason } = req.body;
-        
-        // Basic validation
+
+        // Check required fields
         if (!emp_id || !start_date || !end_date || !timeoff_type) {
             return res.status(400).json({
                 success: false,
                 error: 'emp_id, start_date, end_date, and timeoff_type are required'
             });
         }
-        
-        // Check that end date is not before start date
+
+        // End date must be after start date
         if (new Date(end_date) < new Date(start_date)) {
             return res.status(400).json({
                 success: false,
                 error: 'End date must be after start date'
             });
         }
-        
-        // Check that start date is not in the past
+
+        // Cannot request leave for past dates
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (new Date(start_date) < today) {
@@ -121,7 +121,7 @@ router.post('/timeoff', authMiddleware, async (req, res) => {
                 error: 'Cannot request leave for past dates'
             });
         }
-        
+
         // Insert new time-off request
         const [result] = await pool.query(
             `INSERT INTO timeoff 
@@ -129,7 +129,7 @@ router.post('/timeoff', authMiddleware, async (req, res) => {
              VALUES (?, NOW(), ?, ?, ?, ?, 'pending')`,
             [emp_id, start_date, end_date, timeoff_type, reason || null]
         );
-        
+
         res.status(201).json({
             success: true,
             message: 'Time-off request submitted',
@@ -141,31 +141,32 @@ router.post('/timeoff', authMiddleware, async (req, res) => {
 });
 
 // PUT /api/timeoff/:id/approve - Approve a time-off request
-router.put('/timeoff/:id/approve', authMiddleware, async (req, res) => {
+router.put('/:id/approve', authMiddleware, async (req, res) => {
     try {
         const timeoffId = req.params.id;
         const approverId = req.user.user_id;
-        
-        // Check if request exists and is pending
+
+        // Check if request exists
         const [existing] = await pool.query(
             'SELECT * FROM timeoff WHERE timeoff_id = ?',
             [timeoffId]
         );
-        
+
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Time-off request not found'
             });
         }
-        
+
+        // Only pending requests can be approved
         if (existing[0].status !== 'pending') {
             return res.status(400).json({
                 success: false,
                 error: `Request is already ${existing[0].status}`
             });
         }
-        
+
         // Update status to approved
         await pool.query(
             `UPDATE timeoff 
@@ -173,7 +174,7 @@ router.put('/timeoff/:id/approve', authMiddleware, async (req, res) => {
              WHERE timeoff_id = ?`,
             [approverId, timeoffId]
         );
-        
+
         res.json({
             success: true,
             message: 'Time-off request approved'
@@ -184,32 +185,33 @@ router.put('/timeoff/:id/approve', authMiddleware, async (req, res) => {
 });
 
 // PUT /api/timeoff/:id/deny - Deny a time-off request
-router.put('/timeoff/:id/deny', authMiddleware, async (req, res) => {
+router.put('/:id/deny', authMiddleware, async (req, res) => {
     try {
         const timeoffId = req.params.id;
         const approverId = req.user.user_id;
         const { denial_reason } = req.body;
-        
-        // Check if request exists and is pending
+
+        // Check if request exists
         const [existing] = await pool.query(
             'SELECT * FROM timeoff WHERE timeoff_id = ?',
             [timeoffId]
         );
-        
+
         if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Time-off request not found'
             });
         }
-        
+
+        // Only pending requests can be denied
         if (existing[0].status !== 'pending') {
             return res.status(400).json({
                 success: false,
                 error: `Request is already ${existing[0].status}`
             });
         }
-        
+
         // Update status to denied
         await pool.query(
             `UPDATE timeoff 
@@ -217,7 +219,7 @@ router.put('/timeoff/:id/deny', authMiddleware, async (req, res) => {
              WHERE timeoff_id = ?`,
             [approverId, denial_reason || null, timeoffId]
         );
-        
+
         res.json({
             success: true,
             message: 'Time-off request denied'
