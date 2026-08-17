@@ -1,263 +1,263 @@
+// Payroll module - uses API only
+const API_URL = 'http://localhost:3000';
+
 document.addEventListener("DOMContentLoaded", function () {
-  Promise.all([
-    fetch("data.json").then((r) => r.json()),
-    fetch("payroll.json").then((r) => r.json()),
-  ])
-    .then(([appData, payrollJson]) => {
-      window.ModernTech = window.ModernTech || {};
-      const liveEmployees = JSON.parse(
-        localStorage.getItem("moderntech_employees_v1") || "[]",
-      );
-      window.ModernTech.employeeInfo =
-        liveEmployees.length > 0 ? liveEmployees : appData.employeeInfo;
-      window.ModernTech.payrollData = payrollJson.payrollData;
-      window.ModernTech._ready = true;
-      initPayroll();
-    })
-    .catch((error) => {
-      console.error("Failed to load data:", error);
-      const container = document.querySelector(".pay-container");
-      if (container) {
-        container.innerHTML = `<div class="text-center py-5"><i class="bi bi-exclamation-triangle text-danger" style="font-size:48px;"></i><h3 class="mt-3 text-danger">Data Load Error</h3><p class="text-muted">Failed to load payroll data.</p></div>`;
-      }
-    });
+    initPayroll();
 });
 
-function initPayroll() {
-  const { employeeInfo, payrollData } = window.ModernTech;
-  const { getInitials, getDepartmentColor, showToast } = window.ModernTechUtils;
-
-  const currentUser = getCurrentUser();
-  const isHR =
-    currentUser &&
-    (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
-  const userEmployeeId = currentUser ? currentUser.employeeId : null;
-
-  const visibleEmployees = isHR
-    ? employeeInfo
-    : employeeInfo.filter((e) => e.employeeId === userEmployeeId);
-
-  const payroll = visibleEmployees.map((emp) => {
-    const existingPayroll = payrollData.find(
-      (p) => p.employeeId === emp.employeeId,
-    );
-    if (existingPayroll) {
-      const chargeableHours = Math.max(
-        1,
-        existingPayroll.hoursWorked - existingPayroll.leaveDeductions,
-      );
-      const hourlyRate = Math.round(
-        existingPayroll.finalSalary / chargeableHours,
-      );
-      const gross = hourlyRate * existingPayroll.hoursWorked;
-      const paye = Math.round(gross * 0.18);
-      const uif = Math.round(gross * 0.01);
-      const medical = Math.round(gross * 0.22);
-      const pension = Math.round(gross * 0.075);
-      const deductions = paye + uif + medical + pension;
-      const net = gross - deductions;
-      return {
-        ...emp,
-        id: "MT-" + String(emp.employeeId).padStart(3, "0"),
-        hoursWorked: existingPayroll.hoursWorked,
-        leaveDeductions: existingPayroll.leaveDeductions,
-        finalSalary: existingPayroll.finalSalary,
-        hourlyRate,
-        gross,
-        deductions,
-        net,
-        paye,
-        uif,
-        medical,
-        pension,
-        color: getDepartmentColor(emp.department),
-      };
-    } else {
-      const salary = emp.salary || 50000;
-      const hoursWorked = 0;
-      const leaveDeductions = 0;
-      const chargeableHours = Math.max(1, hoursWorked - leaveDeductions);
-      const hourlyRate =
-        hoursWorked > 0 ? Math.round(salary / chargeableHours) : 0;
-      const gross = hourlyRate * hoursWorked;
-      const paye = Math.round(gross * 0.18);
-      const uif = Math.round(gross * 0.01);
-      const medical = Math.round(gross * 0.22);
-      const pension = Math.round(gross * 0.075);
-      const deductions = paye + uif + medical + pension;
-      const net = gross - deductions;
-      return {
-        ...emp,
-        id: "MT-" + String(emp.employeeId).padStart(3, "0"),
-        hoursWorked,
-        leaveDeductions,
-        finalSalary: salary,
-        hourlyRate,
-        gross,
-        deductions,
-        net,
-        paye,
-        uif,
-        medical,
-        pension,
-        color: getDepartmentColor(emp.department),
-      };
+async function getPayrollFromAPI() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/payroll`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        return data.data;
+    } catch (error) {
+        console.error('Error fetching payroll:', error);
+        return [];
     }
-  });
+}
 
-  let query = "";
+async function calculatePayslipAPI(emp_id, period_start, period_end) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/payroll/calculate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ emp_id, period_start, period_end })
+        });
+        const data = await response.json();
+        return data.data;
+    } catch (error) {
+        console.error('Error calculating payslip:', error);
+        return null;
+    }
+}
 
-  function fmt(n) {
-    return "R " + n.toLocaleString("en-ZA");
-  }
+async function loadEmployeesFromAPI() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/api/employees`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        return data.data;
+    } catch (error) {
+        return [];
+    }
+}
 
-  function renderTable() {
-    const tbody = document.getElementById("payBody");
-    if (!tbody) return;
-    const q = query.trim().toLowerCase();
-
-    const filtered = payroll.filter(
-      (p) =>
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        p.department.toLowerCase().includes(q) ||
-        p.id.toLowerCase().includes(q),
-    );
-
-    tbody.innerHTML = filtered.length
-      ? filtered
-          .map(
-            (p) => `
-        <tr onclick="openPayslip(${p.employeeId})" style="cursor:pointer;">
-          <td>
-            <div class="pay-slip-emp" style="margin:0;padding:0;border:none;">
-              <div class="pay-slip-avatar" style="background:${p.color}">${getInitials(p.name)}</div>
-              <div>
-                <div class="pay-emp-name">${p.name}</div>
-                <div class="pay-emp-id">${p.id} · ${p.position}</div>
-                <span class="pay-dept-tag">${p.department}</span>
-              </div>
-            </div>
-          </td>
-          <td>${p.hoursWorked}h ${p.leaveDeductions ? `<span style="color:var(--text-muted)">(-${p.leaveDeductions}h leave)</span>` : ""}</td>
-          <td>${fmt(p.hourlyRate)}</td>
-          <td>${fmt(p.gross)}</td>
-          <td>- ${fmt(p.deductions)}</td>
-          <td class="pay-net-cell">${fmt(p.net)}</td>
-        </tr>`,
-          )
-          .join("")
-      : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);cursor:default;padding:20px;">No payslips found.</td></tr>`;
-
-    const footer = document.getElementById("tableFooter");
-    if (footer)
-      footer.textContent = `Showing ${filtered.length} of ${payroll.length} payslips`;
-
-    document.getElementById("totalGross").textContent = fmt(
-      payroll.reduce((s, p) => s + p.gross, 0),
-    );
-    document.getElementById("totalCount").textContent = payroll.length;
-
-    const subtitle = document.querySelector(".pay-card-sub");
-    if (subtitle)
-      subtitle.textContent = isHR
-        ? "Click a row to preview the digital payslip"
-        : "Your payslip - click to view details";
-  }
-
-  window.openPayslip = function (employeeId) {
-    const p = payroll.find((x) => x.employeeId === employeeId);
-    if (!p) return;
-    const modal = document.getElementById("payslipModal");
-    const body = document.getElementById("payslipBody");
-    if (!modal || !body) return;
-
-    body.innerHTML = `
-      <div class="pay-slip-emp"><div class="pay-slip-avatar" style="background:${p.color}">${getInitials(p.name)}</div>
-        <div><div style="font-weight:700;color:var(--text-dark)">${p.name}</div><div style="font-size:12px;color:var(--text-muted)">${p.position} · ${p.id} · ${p.department}</div><div style="font-size:12px;color:var(--text-muted)">${p.contact || ""}</div></div></div>
-      <div class="pay-row"><span>Hours worked</span><span>${p.hoursWorked}h</span></div>
-      <div class="pay-row"><span>Leave deductions</span><span>${p.leaveDeductions}h</span></div>
-      <div class="pay-row"><span>Hourly rate</span><span>${fmt(p.hourlyRate)}</span></div>
-      <div class="pay-row pay-row-calc"><span>Calc: ${fmt(p.finalSalary)} / (${p.hoursWorked} − ${p.leaveDeductions})</span><span></span></div>
-      <div class="pay-row"><span>Gross pay</span><span>${fmt(p.gross)}</span></div>
-      <div class="pay-row"><span>PAYE (18%)</span><span>- ${fmt(p.paye)}</span></div>
-      <div class="pay-row"><span>UIF (1%)</span><span>- ${fmt(p.uif)}</span></div>
-      <div class="pay-row"><span>Medical aid (22%)</span><span>- ${fmt(p.medical)}</span></div>
-      <div class="pay-row"><span>Pension (7.5%)</span><span>- ${fmt(p.pension)}</span></div>
-      <div class="pay-net-bar"><div><div style="font-size:12px;opacity:.8">Net pay</div><div style="font-size:20px;font-weight:700">${fmt(p.net)}</div></div>
-        <button class="btn btn-sm" style="background:#fff;color:#0f6e6e;border:none;" onclick="event.stopPropagation();exportPayslipPDF(${p.employeeId})"><i class="bi bi-download me-1"></i> PDF</button></div>`;
-    modal.classList.add("open");
-    modal.onclick = (e) => {
-      if (e.target === modal) closePayslip();
+function getDepartmentColor(dept) {
+    const colors = {
+        'Development': '#4CAF50',
+        'HR': '#2196F3',
+        'QA': '#FF9800',
+        'Sales': '#E74C5E',
+        'Marketing': '#9C27B0',
+        'Design': '#00BCD4',
+        'IT': '#607D8B',
+        'Finance': '#795548',
+        'Support': '#3F51B5'
     };
-  };
+    return colors[dept] || '#8686AC';
+}
 
-  window.closePayslip = function () {
-    document.getElementById("payslipModal")?.classList.remove("open");
-  };
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closePayslip();
-  });
-
-  window.exportCSV = function () {
-    if (!isHR) {
-      showToast("Only HR staff can export payroll data.", "danger");
-      return;
+function showToast(message, type) {
+    if (window.ModernTechUtils && window.ModernTechUtils.showToast) {
+        window.ModernTechUtils.showToast(message, type);
+        return;
     }
-    const rows = payroll.map((p) => ({
-      Employee: p.name,
-      ID: p.id,
-      Position: p.position,
-      Department: p.department,
-      "Hours Worked": p.hoursWorked,
-      "Leave Deductions": p.leaveDeductions,
-      "Hourly Rate": p.hourlyRate,
-      "Gross Pay": p.gross,
-      Deductions: p.deductions,
-      "Net Pay": p.net,
-    }));
-    const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.json_to_sheet(rows);
-    Object.keys(rows[0]).forEach((key, i) => {
-      const cellRef = XLSX.utils.encode_cell({ r: 0, c: i });
-      if (ws1[cellRef])
-        ws1[cellRef].s = {
-          font: { bold: true, color: { rgb: "FFFFFF" } },
-          fill: { fgColor: { rgb: "272757" } },
+    alert(message);
+}
+
+function getInitials(name) {
+    if (!name) return "";
+    return name.split(' ').map(word => word[0]).join('');
+}
+
+async function initPayroll() {
+    try {
+        const currentUser = getCurrentUser();
+        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
+        const userEmployeeId = currentUser ? currentUser.employeeId : null;
+
+        const payPageDate = document.getElementById("payPageDate");
+        if (payPageDate) {
+            payPageDate.textContent = new Date().toLocaleDateString("en-ZA", {
+                weekday: "long", day: "numeric", month: "long", year: "numeric"
+            });
+        }
+
+        // Load employees
+        const employees = await loadEmployeesFromAPI();
+        if (!employees || employees.length === 0) {
+            document.getElementById("payBody").innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No employees found.</td></tr>';
+            return;
+        }
+
+        // Load payroll data
+        const payrollData = await getPayrollFromAPI();
+
+        // Build payroll list
+        const visibleEmployees = isHR ? employees : employees.filter(e => e.emp_id === userEmployeeId);
+        
+        const payroll = visibleEmployees.map((emp) => {
+            const existingPayroll = payrollData.find(p => p.emp_id === emp.emp_id);
+            if (existingPayroll) {
+                const baseSalary = parseFloat(existingPayroll.base_salary);
+                const taxRate = parseFloat(existingPayroll.tax_rate) / 100;
+                const gross = baseSalary;
+                const tax = gross * taxRate;
+                const net = gross - tax;
+                return {
+                    ...emp,
+                    id: "MT-" + String(emp.emp_id).padStart(3, "0"),
+                    hoursWorked: 160,
+                    leaveDeductions: 0,
+                    finalSalary: baseSalary,
+                    hourlyRate: Math.round(baseSalary / 160),
+                    gross: gross,
+                    deductions: tax,
+                    net: net,
+                    taxRate: taxRate,
+                    color: getDepartmentColor(emp.department)
+                };
+            } else {
+                const salary = 50000;
+                return {
+                    ...emp,
+                    id: "MT-" + String(emp.emp_id).padStart(3, "0"),
+                    hoursWorked: 0,
+                    leaveDeductions: 0,
+                    finalSalary: salary,
+                    hourlyRate: 0,
+                    gross: 0,
+                    deductions: 0,
+                    net: 0,
+                    taxRate: 0,
+                    color: getDepartmentColor(emp.department)
+                };
+            }
+        });
+
+        let query = "";
+        const searchInput = document.getElementById("searchInput");
+        if (searchInput) {
+            searchInput.addEventListener("input", (e) => {
+                query = e.target.value;
+                renderTable();
+            });
+        }
+
+        function fmt(n) {
+            return "R " + n.toLocaleString("en-ZA");
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("payBody");
+            if (!tbody) return;
+            const q = query.trim().toLowerCase();
+
+            const filtered = payroll.filter(p =>
+                !q || p.name.toLowerCase().includes(q) || p.department.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
+            );
+
+            tbody.innerHTML = filtered.length ? filtered.map((p) => `
+                <tr onclick="openPayslip(${p.emp_id})" style="cursor:pointer;">
+                    <td>
+                        <div class="pay-slip-emp" style="margin:0;padding:0;border:none;">
+                            <div class="pay-slip-avatar" style="background:${p.color}">${getInitials(p.name)}</div>
+                            <div>
+                                <div class="pay-emp-name">${p.name}</div>
+                                <div class="pay-emp-id">${p.id} · ${p.position}</div>
+                                <span class="pay-dept-tag">${p.department}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${p.hoursWorked}h</td>
+                    <td>${fmt(p.hourlyRate)}</td>
+                    <td>${fmt(p.gross)}</td>
+                    <td>- ${fmt(p.deductions)}</td>
+                    <td class="pay-net-cell">${fmt(p.net)}</td>
+                </tr>
+            `).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);cursor:default;padding:20px;">No payslips found.</td></tr>`;
+
+            const footer = document.getElementById("tableFooter");
+            if (footer) footer.textContent = `Showing ${filtered.length} of ${payroll.length} payslips`;
+
+            document.getElementById("totalGross").textContent = fmt(payroll.reduce((s, p) => s + p.gross, 0));
+            document.getElementById("totalCount").textContent = payroll.length;
+
+            const subtitle = document.querySelector(".pay-card-sub");
+            if (subtitle) subtitle.textContent = isHR ? "Click a row to preview the digital payslip" : "Your payslip - click to view details";
+        }
+
+        window.openPayslip = function (employeeId) {
+            const p = payroll.find(x => x.emp_id === employeeId);
+            if (!p) return;
+            const modal = document.getElementById("payslipModal");
+            const body = document.getElementById("payslipBody");
+            if (!modal || !body) return;
+
+            body.innerHTML = `
+                <div class="pay-slip-emp">
+                    <div class="pay-slip-avatar" style="background:${p.color}">${getInitials(p.name)}</div>
+                    <div>
+                        <div style="font-weight:700;color:var(--text-dark)">${p.name}</div>
+                        <div style="font-size:12px;color:var(--text-muted)">${p.position} · ${p.id} · ${p.department}</div>
+                        <div style="font-size:12px;color:var(--text-muted)">${p.email || ""}</div>
+                    </div>
+                </div>
+                <div class="pay-row"><span>Hours worked</span><span>${p.hoursWorked}h</span></div>
+                <div class="pay-row"><span>Hourly rate</span><span>${fmt(p.hourlyRate)}</span></div>
+                <div class="pay-row"><span>Gross pay</span><span>${fmt(p.gross)}</span></div>
+                <div class="pay-row"><span>Tax (${Math.round(p.taxRate * 100)}%)</span><span>- ${fmt(p.deductions)}</span></div>
+                <div class="pay-net-bar">
+                    <div>
+                        <div style="font-size:12px;opacity:.8">Net pay</div>
+                        <div style="font-size:20px;font-weight:700">${fmt(p.net)}</div>
+                    </div>
+                </div>`;
+            modal.classList.add("open");
+            modal.onclick = (e) => { if (e.target === modal) closePayslip(); };
         };
-    });
-    ws1["!cols"] = Object.keys(rows[0]).map((h) => ({
-      wch:
-        h === "Employee" || h === "Position"
-          ? 22
-          : h === "Department"
-            ? 16
-            : 14,
-    }));
-    XLSX.utils.book_append_sheet(wb, ws1, "Payslip Register");
-    XLSX.writeFile(
-      wb,
-      `payroll_report_${new Date().toISOString().split("T")[0]}.xlsx`,
-    );
-    showToast(`Excel report exported.`, "success");
-  };
 
-  document.getElementById("searchInput")?.addEventListener("input", (e) => {
-    query = e.target.value;
-    renderTable();
-  });
+        window.closePayslip = function () {
+            document.getElementById("payslipModal")?.classList.remove("open");
+        };
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePayslip(); });
 
-  const payPageDate = document.getElementById("payPageDate");
-  if (payPageDate)
-    payPageDate.textContent = new Date().toLocaleDateString("en-ZA", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+        window.exportCSV = function () {
+            if (!isHR) {
+                showToast("Only HR staff can export payroll data.", "danger");
+                return;
+            }
+            const rows = payroll.map((p) => ({
+                Employee: p.name,
+                ID: p.id,
+                Position: p.position,
+                Department: p.department,
+                "Hours Worked": p.hoursWorked,
+                "Hourly Rate": p.hourlyRate,
+                "Gross Pay": p.gross,
+                Deductions: p.deductions,
+                "Net Pay": p.net,
+            }));
+            const wb = XLSX.utils.book_new();
+            const ws1 = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws1, "Payslip Register");
+            XLSX.writeFile(wb, `payroll_report_${new Date().toISOString().split("T")[0]}.xlsx`);
+            showToast(`Excel report exported.`, "success");
+        };
 
-  renderTable();
-  console.log(
-    `✅ Payroll module initialized (${isHR ? "HR Admin" : "Employee"} view)`,
-  );
+        renderTable();
+        console.log(`✅ Payroll module initialized (${isHR ? "HR Admin" : "Employee"} view)`);
+    } catch (error) {
+        console.error('Error initializing payroll:', error);
+        document.getElementById("payBody").innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error loading payroll data. Is the server running?</td></tr>';
+    }
 }

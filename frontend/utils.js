@@ -1,14 +1,8 @@
 /**
- * ============================================================
  * MODERNTECH SOLUTIONS - SHARED UTILITIES
  * Reusable functions used across multiple pages
- * ============================================================
  */
 
-/**
- * Get initials from a full name
- * Example: "Sibongile Nkosi" → "SN"
- */
 function getInitials(name) {
   if (!name) return "";
   return name
@@ -17,9 +11,6 @@ function getInitials(name) {
     .join("");
 }
 
-/**
- * Get employee by ID
- */
 function getEmployeeById(id) {
   if (window.ModernTech && window.ModernTech.employeeInfo) {
     return window.ModernTech.employeeInfo.find((e) => e.employeeId === id);
@@ -27,9 +18,6 @@ function getEmployeeById(id) {
   return null;
 }
 
-/**
- * Get attendance data for an employee
- */
 function getEmployeeAttendance(employeeId) {
   if (window.ModernTech && window.ModernTech.attendanceAndLeave) {
     const record = window.ModernTech.attendanceAndLeave.find(
@@ -40,9 +28,6 @@ function getEmployeeAttendance(employeeId) {
   return [];
 }
 
-/**
- * Get leave requests for an employee
- */
 function getEmployeeLeaveRequests(employeeId) {
   if (window.ModernTech && window.ModernTech.attendanceAndLeave) {
     const record = window.ModernTech.attendanceAndLeave.find(
@@ -53,30 +38,21 @@ function getEmployeeLeaveRequests(employeeId) {
   return [];
 }
 
-/**
- * Get today's status for an employee
- */
 function getTodayStatus(employeeId) {
   const attendance = getEmployeeAttendance(employeeId);
   if (!attendance || attendance.length === 0) return "Not Recorded";
 
-  const today = window.ModernTech ? window.ModernTech.today : "2025-07-29";
+  const today = new Date().toISOString().split('T')[0];
   const todayRecord = attendance.find((a) => a.date === today);
   return todayRecord ? todayRecord.status : "Not Recorded";
 }
 
-/**
- * Calculate days between two dates
- */
 function calculateDays(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
   return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-/**
- * Department colors
- */
 const departmentColors = {
   Development: "#4CAF50",
   HR: "#2196F3",
@@ -89,54 +65,58 @@ const departmentColors = {
   Support: "#3F51B5",
 };
 
-/**
- * Get color for a department
- */
 function getDepartmentColor(department) {
   return departmentColors[department] || "#8686AC";
 }
 
-/**
- * Show toast notification - works across all pages
- */
+// Enhanced toast notification with fallback
 function showToast(message, type = "success") {
-  // Try all possible toast elements
-  const toastIds = ["attToast", "toToast", "payToast"];
-  let toast = null;
-
-  for (const id of toastIds) {
-    const el = document.getElementById(id);
-    if (el) {
-      toast = el;
-      break;
-    }
+  // Try to use existing toast system
+  if (window.ModernTechUtils && typeof window.ModernTechUtils.showToast === 'function') {
+    window.ModernTechUtils.showToast(message, type);
+    return;
   }
-
-  if (!toast) {
-    // Create a toast if none exists
-    toast = document.createElement("div");
-    toast.id = "dynamicToast";
-    toast.className = "toast-custom";
-    document.body.appendChild(toast);
-
-    // Add toast container if needed
-    let container = document.querySelector(".toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.className = "toast-container";
-      document.body.appendChild(container);
-    }
-    container.appendChild(toast);
+  
+  // Create our own toast if none exists
+  let container = document.querySelector('.toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;';
+    document.body.appendChild(container);
   }
-
+  
+  const toast = document.createElement('div');
+  toast.className = `toast-custom ${type}`;
   toast.textContent = message;
-  toast.className = "toast-custom " + type;
-  toast.classList.add("show");
-
-  clearTimeout(toast._timeout);
-  toast._timeout = setTimeout(() => {
-    toast.classList.remove("show");
-    toast.className = "toast-custom";
+  toast.style.cssText = `
+    background: ${type === 'success' ? '#1b5e20' : type === 'danger' ? '#b71c1c' : '#272757'};
+    color: white;
+    padding: 14px 22px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    margin-bottom: 4px;
+  `;
+  container.appendChild(toast);
+  
+  // Trigger show animation
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      if (toast.parentNode) toast.remove();
+    }, 300);
   }, 3000);
 }
 
