@@ -1,5 +1,5 @@
 // Payroll module - uses API only
-const API_URL = 'http://localhost:3000';
+// API_URL is defined in auth.js
 
 document.addEventListener("DOMContentLoaded", function () {
     initPayroll();
@@ -67,8 +67,8 @@ function getDepartmentColor(dept) {
 }
 
 function showToast(message, type) {
-    if (window.ModernTechUtils && window.ModernTechUtils.showToast) {
-        window.ModernTechUtils.showToast(message, type);
+    if (window.showToast) {
+        window.showToast(message, type);
         return;
     }
     alert(message);
@@ -82,7 +82,7 @@ function getInitials(name) {
 async function initPayroll() {
     try {
         const currentUser = getCurrentUser();
-        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
+        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin" || currentUser.role === "hr_staff");
         const userEmployeeId = currentUser ? currentUser.employeeId : null;
 
         const payPageDate = document.getElementById("payPageDate");
@@ -102,10 +102,11 @@ async function initPayroll() {
         // Load payroll data
         const payrollData = await getPayrollFromAPI();
 
-        // Build payroll list
+        // Build payroll list - FIXED: Add name field
         const visibleEmployees = isHR ? employees : employees.filter(e => e.emp_id === userEmployeeId);
         
         const payroll = visibleEmployees.map((emp) => {
+            const name = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown';
             const existingPayroll = payrollData.find(p => p.emp_id === emp.emp_id);
             if (existingPayroll) {
                 const baseSalary = parseFloat(existingPayroll.base_salary);
@@ -115,6 +116,7 @@ async function initPayroll() {
                 const net = gross - tax;
                 return {
                     ...emp,
+                    name: name,  // ← FIXED: Add name field
                     id: "MT-" + String(emp.emp_id).padStart(3, "0"),
                     hoursWorked: 160,
                     leaveDeductions: 0,
@@ -130,6 +132,7 @@ async function initPayroll() {
                 const salary = 50000;
                 return {
                     ...emp,
+                    name: name,  // ← FIXED: Add name field
                     id: "MT-" + String(emp.emp_id).padStart(3, "0"),
                     hoursWorked: 0,
                     leaveDeductions: 0,

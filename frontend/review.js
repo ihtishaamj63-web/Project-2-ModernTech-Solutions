@@ -1,5 +1,5 @@
 // Reviews module - uses API only
-const API_URL = 'http://localhost:3000';
+// API_URL is defined in auth.js
 
 document.addEventListener("DOMContentLoaded", function () {
     initReviews();
@@ -70,7 +70,7 @@ function showToast(message, type) {
 async function initReviews() {
     try {
         const currentUser = getCurrentUser();
-        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
+        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin" || currentUser.role === "hr_staff");
 
         const revPageDate = document.getElementById("revPageDate");
         if (revPageDate) {

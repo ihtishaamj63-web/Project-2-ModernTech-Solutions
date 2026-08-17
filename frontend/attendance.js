@@ -1,5 +1,5 @@
 // Attendance module - uses API only
-const API_URL = 'http://localhost:3000';
+// API_URL is defined in auth.js
 
 // GET attendance from API
 async function loadAttendanceFromAPI() {
@@ -56,55 +56,12 @@ function getDepartmentColor(dept) {
     return colors[dept] || '#8686AC';
 }
 
-// Toast notification - tries utils first, then creates its own
-function showToast(message, type = "success") {
-    // Try to use existing toast system
+function showToast(message, type) {
     if (window.ModernTechUtils && typeof window.ModernTechUtils.showToast === 'function') {
         window.ModernTechUtils.showToast(message, type);
         return;
     }
-    
-    // Create our own toast if none exists
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.className = 'toast-container';
-        container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;';
-        document.body.appendChild(container);
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = `toast-custom ${type}`;
-    toast.textContent = message;
-    toast.style.cssText = `
-        background: ${type === 'success' ? '#1b5e20' : type === 'danger' ? '#b71c1c' : '#272757'};
-        color: white;
-        padding: 14px 22px;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 14px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-        opacity: 0;
-        transform: translateY(20px);
-        transition: all 0.3s ease;
-        margin-bottom: 4px;
-    `;
-    container.appendChild(toast);
-    
-    // Trigger show animation
-    requestAnimationFrame(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-    });
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-            if (toast.parentNode) toast.remove();
-        }, 300);
-    }, 3000);
+    alert(message);
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -126,7 +83,7 @@ async function initAttendance() {
         }
 
         const currentUser = getCurrentUser();
-        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
+        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin" || currentUser.role === "hr_staff");
         const userEmployeeId = currentUser ? currentUser.employeeId : null;
 
         const attendanceData = await loadAttendanceFromAPI();
@@ -181,10 +138,10 @@ async function initAttendance() {
             logAttendance(employeeList);
         });
 
-        console.log("✅ Attendance module initialized with API");
+        console.log("✅ Attendance module initialized");
     } catch (error) {
-        console.error('Error initializing attendance:', error);
-        showToast('Failed to load attendance data. Is the server running?', 'danger');
+        console.error('Error:', error);
+        showToast('Failed to load attendance data', 'danger');
     }
 }
 
@@ -202,8 +159,6 @@ function renderTodayView(employees) {
 
     container.innerHTML = sorted.map((emp) => {
         const statusClass = emp.status === "Active" ? "active" : emp.status === "On Leave" ? "on-leave" : "probation";
-        const today = new Date().toISOString().split('T')[0];
-        const todayRecord = emp.attendance.find(a => a.attendance_date === today);
         const weekRecords = emp.attendance.slice(0, 5);
         const presentCount = weekRecords.filter(a => a.status === 'present').length;
         const absentCount = weekRecords.filter(a => a.status === 'absent').length;
@@ -225,7 +180,7 @@ function renderTodayView(employees) {
             <td>${emp.department}</td>
             <td><span class="att-status-badge ${statusClass}"><span class="att-status-dot"></span>${emp.status}</span></td>
             <td>${weekDisplay}</td>
-            <td><button class="btn btn-sm btn-outline-primary view-details-btn" data-employee-id="${emp.id}">View Details</button></td>
+            <td><button class="btn btn-sm btn-outline-primary view-details-btn" data-employee-id="${emp.id}">View</button></td>
         </tr>`;
     }).join("");
 
@@ -241,7 +196,7 @@ function renderTodayView(employees) {
                         <p><strong>Department:</strong> ${emp.department}</p>
                         <p><strong>Position:</strong> ${emp.position}</p>
                         <p><strong>Status:</strong> ${emp.status}</p>
-                        <p><strong>Total Attendance Records:</strong> ${emp.attendance.length}</p>
+                        <p><strong>Total Records:</strong> ${emp.attendance.length}</p>
                     </div>`;
                 }
                 new bootstrap.Modal(document.getElementById("attEmployeeModal")).show();
@@ -270,10 +225,10 @@ async function logAttendance(employeeList) {
     try {
         const result = await logAttendanceToAPI(employeeId, date, status, 8.0, notes);
         if (result.success) {
-            showToast("Attendance logged successfully", "success");
+            showToast("Attendance logged", "success");
             setTimeout(() => location.reload(), 1000);
         } else {
-            showToast(result.error || "Failed to log attendance", "danger");
+            showToast(result.error || "Failed", "danger");
         }
     } catch (error) {
         showToast("Error logging attendance", "danger");

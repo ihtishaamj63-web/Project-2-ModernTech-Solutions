@@ -1,5 +1,5 @@
 // Time-off module - uses API only
-const API_URL = 'http://localhost:3000';
+// API_URL is defined in auth.js
 
 // GET time-off from API
 async function loadTimeOffFromAPI() {
@@ -81,7 +81,7 @@ function getDepartmentColor(dept) {
 }
 
 function showToast(message, type) {
-    if (window.ModernTechUtils && window.ModernTechUtils.showToast) {
+    if (window.ModernTechUtils && typeof window.ModernTechUtils.showToast === 'function') {
         window.ModernTechUtils.showToast(message, type);
         return;
     }
@@ -101,7 +101,7 @@ async function initTimeOff() {
         }
 
         const currentUser = getCurrentUser();
-        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
+        const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin" || currentUser.role === "hr_staff");
         const userEmployeeId = currentUser ? currentUser.employeeId : null;
 
         const toPageDate = document.getElementById("toPageDate");
@@ -111,7 +111,6 @@ async function initTimeOff() {
             });
         }
 
-        // Load employees
         const employees = await loadEmployeesFromAPI();
         const employeeList = employees.map(emp => ({
             ...emp,
@@ -123,7 +122,6 @@ async function initTimeOff() {
             attendance: []
         }));
 
-        // Load timeoff
         const timeoffData = await loadTimeOffFromAPI();
         
         if (timeoffData) {
@@ -143,10 +141,28 @@ async function initTimeOff() {
             });
         }
 
+        // Auto-deny expired requests
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        employeeList.forEach(emp => {
+            emp.leaveRequests.forEach(req => {
+                if (req.status === "pending") {
+                    const reqDate = new Date(req.date);
+                    if (reqDate < thirtyDaysAgo) {
+                        req.status = "denied";
+                        req.reason = (req.reason || "") + " (Auto-denied: expired)";
+                    }
+                }
+            });
+        });
+
         let visibleEmployees = employeeList;
         if (!isHR && userEmployeeId) {
             visibleEmployees = employeeList.filter(e => e.employeeId === userEmployeeId);
         }
+
+        window._employees = visibleEmployees;
 
         renderAllRequests(visibleEmployees, isHR, userEmployeeId);
         populateEmployeeSelect(visibleEmployees, isHR, userEmployeeId);
@@ -159,9 +175,10 @@ async function initTimeOff() {
             });
         }
 
-        console.log(`✅ Time Off module initialized with API (${isHR ? "HR Admin" : "Employee"} view)`);
+        console.log("✅ Time Off module initialized");
     } catch (error) {
-        console.error('Error initializing timeoff:', error);
+        console.error('Error:', error);
+        showToast('Failed to load time-off data', 'danger');
     }
 }
 
@@ -198,10 +215,10 @@ function renderAllRequests(employees, isHR, userEmployeeId) {
         const statusClass = req.status.toLowerCase();
         
         let badgeClass = "", icon = "";
-        if (req.status === "Approved") {
+        if (req.status === "approved") {
             badgeClass = "approved";
             icon = "✓";
-        } else if (req.status === "Denied") {
+        } else if (req.status === "denied") {
             badgeClass = "denied";
             icon = "✗";
         } else {
@@ -210,13 +227,13 @@ function renderAllRequests(employees, isHR, userEmployeeId) {
         }
 
         let actions = "";
-        if (req.status === "Pending") {
+        if (req.status === "pending") {
             if (isHR) {
                 actions = `<button class="to-btn-approve" onclick="handleApprove(${req.employeeId}, '${req.date}')"><i class="bi bi-check-lg me-1"></i>Approve</button>
                      <button class="to-btn-deny" onclick="handleDeny(${req.employeeId}, '${req.date}')"><i class="bi bi-x-lg me-1"></i>Deny</button>
                      <button onclick="handleCancel(${req.employeeId}, '${req.date}')" style="background:#6b6b8a;color:white;border:none;padding:5px 16px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;transition:0.2s;" onmouseover="this.style.background='#4a4a6a'" onmouseout="this.style.background='#6b6b8a'"><i class="bi bi-trash me-1"></i>Cancel</button>`;
             } else {
-                actions = `<button onclick="handleCancel(${req.employeeId}, '${req.date}')" style="background:#6b6b8a;color:white;border:none;padding:5px 16px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;transition:0.2s;" onmouseover="this.style.background='#4a4a6a'" onmouseout="this.style.background='#6b6b8a'"><i class="bi bi-trash me-1"></i>Cancel Request</button>`;
+                actions = `<button onclick="handleCancel(${req.employeeId}, '${req.date}')" style="background:#6b6b8a;color:white;border:none;padding:5px 16px;border-radius:4px;font-weight:600;font-size:12px;cursor:pointer;transition:0.2s;" onmouseover="this.style.background='#4a4a6a'" onmouseout="this.style.background='#6b6b8a'"><i class="bi bi-trash me-1"></i>Cancel</button>`;
             }
         } else if (isHR) {
             actions = `<button class="to-btn-reverse" onclick="handleReverse(${req.employeeId}, '${req.date}')"><i class="bi bi-arrow-counterclockwise me-1"></i>Reverse</button>`;
@@ -293,22 +310,22 @@ async function submitNewRequest(employees, isHR, userEmployeeId) {
     const type = document.getElementById("toTypeSelect").value;
     const startDate = document.getElementById("toStartDate").value;
     const endDate = document.getElementById("toEndDate").value;
-    const reason = document.getElementById("toReason").value || "No reason provided";
+    const reason = document.getElementById("toReason").value || "No reason";
 
-    if (!employeeId) { showToast("Please select an employee.", "danger"); return; }
-    if (!type) { showToast("Please select a leave type.", "danger"); return; }
-    if (!startDate || !endDate) { showToast("Please select both dates.", "danger"); return; }
-    if (endDate < startDate) { showToast("End date must be after start date.", "danger"); return; }
-    if (!isHR && employeeId !== userEmployeeId) { showToast("You can only submit requests for yourself.", "danger"); return; }
+    if (!employeeId) { showToast("Select employee", "danger"); return; }
+    if (!type) { showToast("Select leave type", "danger"); return; }
+    if (!startDate || !endDate) { showToast("Select both dates", "danger"); return; }
+    if (endDate < startDate) { showToast("End date must be after start", "danger"); return; }
+    if (!isHR && employeeId !== userEmployeeId) { showToast("Only for yourself", "danger"); return; }
 
     const todayDate = new Date();
     todayDate.setHours(0, 0, 0, 0);
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
-    if (start < todayDate) { showToast("Cannot request leave for past dates.", "danger"); return; }
+    if (start < todayDate) { showToast("Cannot request past dates", "danger"); return; }
 
     const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
-    if (days > 30) { showToast("Maximum 30 days per leave request.", "danger"); return; }
+    if (days > 30) { showToast("Max 30 days per request", "danger"); return; }
 
     const emp = employees.find(e => e.employeeId === employeeId);
     if (!emp) return;
@@ -319,7 +336,7 @@ async function submitNewRequest(employees, isHR, userEmployeeId) {
             emp.leaveRequests.push({
                 date: startDate,
                 reason,
-                status: "Pending",
+                status: "pending",
                 type,
                 days,
                 endDate,
@@ -327,70 +344,69 @@ async function submitNewRequest(employees, isHR, userEmployeeId) {
             });
             document.getElementById("toRequestForm").reset();
             renderAllRequests(employees, isHR, userEmployeeId);
-            showToast("✓ Request submitted successfully", "success");
+            showToast("✓ Request submitted", "success");
         } else {
-            showToast(result.error || "Failed to submit request", "danger");
+            showToast(result.error || "Failed", "danger");
         }
     } catch (error) {
-        showToast("Error submitting request", "danger");
+        showToast("Error submitting", "danger");
     }
 }
 
-// Global handlers for buttons
 window.handleApprove = async function(employeeId, date) {
     const emp = window._employees ? window._employees.find(e => e.employeeId === employeeId) : null;
     if (!emp) return;
-    const request = emp.leaveRequests.find(r => r.date === date && r.status === "Pending");
+    const request = emp.leaveRequests.find(r => r.date === date && r.status === "pending");
     if (!request) return;
 
     try {
         const result = await approveTimeOffAPI(request.timeoff_id);
         if (result.success) {
-            request.status = "Approved";
+            request.status = "approved";
             renderAllRequests(window._employees || [], true, null);
             showToast("✓ Request approved", "success");
         } else {
-            showToast(result.error || "Failed to approve", "danger");
+            showToast(result.error || "Failed", "danger");
         }
     } catch (error) {
-        showToast("Error approving request", "danger");
+        showToast("Error approving", "danger");
     }
 };
 
 window.handleDeny = async function(employeeId, date) {
     const emp = window._employees ? window._employees.find(e => e.employeeId === employeeId) : null;
     if (!emp) return;
-    const request = emp.leaveRequests.find(r => r.date === date && r.status === "Pending");
+    const request = emp.leaveRequests.find(r => r.date === date && r.status === "pending");
     if (!request) return;
 
     try {
         const result = await denyTimeOffAPI(request.timeoff_id, "Denied by HR");
         if (result.success) {
-            request.status = "Denied";
+            request.status = "denied";
             renderAllRequests(window._employees || [], true, null);
             showToast("✗ Request denied", "danger");
         } else {
-            showToast(result.error || "Failed to deny", "danger");
+            showToast(result.error || "Failed", "danger");
         }
     } catch (error) {
-        showToast("Error denying request", "danger");
+        showToast("Error denying", "danger");
     }
 };
 
 window.handleCancel = function(employeeId, date) {
     const emp = window._employees ? window._employees.find(e => e.employeeId === employeeId) : null;
     if (!emp) return;
-    emp.leaveRequests = emp.leaveRequests.filter(r => !(r.date === date && r.status === "Pending"));
+    emp.leaveRequests = emp.leaveRequests.filter(r => !(r.date === date && r.status === "pending"));
     renderAllRequests(window._employees || [], true, null);
-    showToast("Request cancelled", "success");
+    showToast("Cancelled", "success");
 };
 
 window.handleReverse = function(employeeId, date) {
     const emp = window._employees ? window._employees.find(e => e.employeeId === employeeId) : null;
     if (!emp) return;
-    const request = emp.leaveRequests.find(r => r.date === date && r.status !== "Pending");
+    const request = emp.leaveRequests.find(r => r.date === date && r.status !== "pending");
     if (request) {
-        request.status = "Pending";
+        request.status = "pending";
         renderAllRequests(window._employees || [], true, null);
         showToast("↻ Reversed", "success");
     }

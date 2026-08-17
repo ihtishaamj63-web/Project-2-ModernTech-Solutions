@@ -1,6 +1,5 @@
 /**
  * MODERNTECH SOLUTIONS - SHARED UTILITIES
- * Reusable functions used across multiple pages
  */
 
 function getInitials(name) {
@@ -53,6 +52,34 @@ function calculateDays(startDate, endDate) {
   return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 }
 
+// FIX: Formats 'sick_leave' to 'Sick Leave', 'unpaid_leave' to 'Unpaid Leave'
+function formatEnum(value) {
+    if (!value) return 'N/A';
+    return value.split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+}
+
+// FIX: Formats '2026-07-21' or '2026-07-21T00:00:00.000Z' to 'Jul 21, 2026'
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const safeDateStr = dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00';
+    const date = new Date(safeDateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// FIX: Formats '2026-07-21 14:30:00' to 'Jul 21, 2026, 2:30 PM'
+function formatDateTime(dateStr) {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr.replace(' ', 'T'));
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleString('en-US', { 
+        year: 'numeric', month: 'short', day: 'numeric', 
+        hour: 'numeric', minute: '2-digit', hour12: true 
+    });
+}
+
 const departmentColors = {
   Development: "#4CAF50",
   HR: "#2196F3",
@@ -69,15 +96,8 @@ function getDepartmentColor(department) {
   return departmentColors[department] || "#8686AC";
 }
 
-// Enhanced toast notification with fallback
+// FIXED: No infinite loop, no self-reference
 function showToast(message, type = "success") {
-  // Try to use existing toast system
-  if (window.ModernTechUtils && typeof window.ModernTechUtils.showToast === 'function') {
-    window.ModernTechUtils.showToast(message, type);
-    return;
-  }
-  
-  // Create our own toast if none exists
   let container = document.querySelector('.toast-container');
   if (!container) {
     container = document.createElement('div');
@@ -104,13 +124,11 @@ function showToast(message, type = "success") {
   `;
   container.appendChild(toast);
   
-  // Trigger show animation
   requestAnimationFrame(() => {
     toast.style.opacity = '1';
     toast.style.transform = 'translateY(0)';
   });
   
-  // Auto remove after 3 seconds
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateY(20px)';
@@ -120,17 +138,22 @@ function showToast(message, type = "success") {
   }, 3000);
 }
 
-// Expose to global scope
+// Expose to global scope - showToast is NOT included here to prevent infinite loop
 window.ModernTechUtils = {
-  getInitials: getInitials,
-  getEmployeeById: getEmployeeById,
-  getEmployeeAttendance: getEmployeeAttendance,
-  getEmployeeLeaveRequests: getEmployeeLeaveRequests,
-  getTodayStatus: getTodayStatus,
-  calculateDays: calculateDays,
-  departmentColors: departmentColors,
-  getDepartmentColor: getDepartmentColor,
-  showToast: showToast,
+  getInitials,
+  getEmployeeById,
+  getEmployeeAttendance,
+  getEmployeeLeaveRequests,
+  getTodayStatus,
+  calculateDays,
+  departmentColors,
+  getDepartmentColor,
+  formatEnum,
+  formatDate,
+  formatDateTime
 };
 
-console.log("✅ Utilities loaded successfully!");
+// Make showToast globally available directly
+window.showToast = showToast;
+
+console.log("✅ Utilities loaded");

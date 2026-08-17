@@ -40,7 +40,7 @@ function loginUser(email, password) {
         }
     })
     .catch(() => {
-        return { success: false, error: 'Server not responding. Is it running?' };
+        return { success: false, error: 'Server not responding' };
     });
 }
 
@@ -69,9 +69,18 @@ function redirectIfLoggedIn() {
 function updateUserUI() {
     const user = getCurrentUser();
     if (!user) return;
-    document.querySelectorAll('.user-name').forEach(el => el.textContent = user.name);
-    document.querySelectorAll('.user-role').forEach(el => el.textContent = user.role + ' · ModernTech');
-    const initials = user.name.split(' ').map(word => word[0]).join('');
+    
+    const userName = user.name || user.username || 'User';
+    
+    document.querySelectorAll('.user-name').forEach(el => el.textContent = userName);
+    document.querySelectorAll('.user-role').forEach(el => el.textContent = (user.role || 'Employee') + ' · ModernTech');
+    
+    const initials = userName
+        .split(' ')
+        .map((word) => word[0] || '')
+        .join('')
+        .toUpperCase() || 'U';
+        
     document.querySelectorAll('.user-avatar').forEach(el => el.textContent = initials);
 }
 
@@ -115,7 +124,7 @@ function setupNightModeToggle() {
     toggleBtn.addEventListener('click', toggleNightMode);
 }
 
-function handleLogin() {
+async function handleLogin() {
     const email = document.getElementById('emailInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorElement = document.getElementById('loginError');
@@ -128,7 +137,8 @@ function handleLogin() {
         return;
     }
     
-    const result = loginUser(email, password);
+    const result = await loginUser(email, password);
+    
     if (result.success) {
         localStorage.removeItem('redirectAfterLogin');
         window.location.href = 'index.html';
@@ -175,4 +185,4 @@ window.loadNightModePreference = loadNightModePreference;
 window.setupNightModeToggle = setupNightModeToggle;
 window.handleLogin = handleLogin;
 
-console.log('🔐 Authentication loaded with API');
+console.log('🔐 Authentication loaded');

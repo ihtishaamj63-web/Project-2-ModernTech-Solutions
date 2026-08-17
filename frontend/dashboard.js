@@ -1,5 +1,5 @@
 // Dashboard module - uses API only
-const API_URL = 'http://localhost:3000';
+// API_URL is defined in auth.js
 
 document.addEventListener("DOMContentLoaded", function () {
     initDashboard();
@@ -19,11 +19,18 @@ async function getDashboardStats() {
     }
 }
 
+function showToast(message, type) {
+    if (window.ModernTechUtils && typeof window.ModernTechUtils.showToast === 'function') {
+        window.ModernTechUtils.showToast(message, type);
+        return;
+    }
+    alert(message);
+}
+
 async function initDashboard() {
     const currentUser = getCurrentUser();
     const isHR = currentUser && (currentUser.role === "HR Manager" || currentUser.role === "HR Admin");
 
-    // Update hero greeting
     try {
         const greetingEl = document.getElementById("dashGreeting");
         const subEl = document.getElementById("dashHeroSub");
@@ -34,46 +41,46 @@ async function initDashboard() {
             greetingEl.textContent = `Welcome back, ${currentUser.name}.`;
         }
         if (!isHR) {
-            if (subEl) subEl.textContent = "View your personal dashboard: attendance, time off and reviews.";
+            if (subEl) subEl.textContent = "View your personal dashboard.";
             if (empBtn) empBtn.style.display = "none";
             if (payBtn) payBtn.style.display = "none";
         } else {
-            if (subEl) subEl.textContent = "Manage employee records, performance reviews and payroll from one centralized HR dashboard.";
+            if (subEl) subEl.textContent = "Manage employee records, reviews and payroll.";
             if (empBtn) empBtn.style.display = "inline-block";
             if (payBtn) payBtn.style.display = "inline-block";
         }
-    } catch (e) {}
 
-    // Fetch and display stats
-    const stats = await getDashboardStats();
+        const stats = await getDashboardStats();
 
-    if (stats) {
-        document.getElementById("dashTotalEmployees").textContent = stats.total_employees || 0;
-        document.getElementById("dashPayrollTotal").textContent = "R " + (stats.payroll_total || 0).toLocaleString("en-ZA");
-        document.getElementById("dashAttRate").textContent = (stats.attendance_rate || 0) + "%";
-        document.getElementById("dashPendingCount").textContent = stats.pending_timeoff || 0;
-        document.getElementById("dashReviewCount").textContent = stats.total_reviews || 0;
+        if (stats) {
+            document.getElementById("dashTotalEmployees").textContent = stats.total_employees || 0;
+            document.getElementById("dashPayrollTotal").textContent = "R " + (stats.payroll_total || 0).toLocaleString("en-ZA");
+            document.getElementById("dashAttRate").textContent = (stats.attendance_rate || 0) + "%";
+            document.getElementById("dashPendingCount").textContent = stats.pending_timeoff || 0;
+            document.getElementById("dashReviewCount").textContent = stats.total_reviews || 0;
+        }
+
+        const today = new Date();
+        const dateEl = document.getElementById("dashTodayDate");
+        if (dateEl) {
+            dateEl.textContent = "Today: " + today.toLocaleDateString("en-ZA", {
+                day: "numeric", month: "long", year: "numeric"
+            });
+        }
+
+        renderWeeklyChart();
+
+        console.log("✅ Dashboard initialized");
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Failed to load dashboard data', 'danger');
     }
-
-    // Set today's date
-    const today = new Date();
-    const dateEl = document.getElementById("dashTodayDate");
-    if (dateEl) {
-        dateEl.textContent = "Today: " + today.toLocaleDateString("en-ZA", {
-            day: "numeric", month: "long", year: "numeric"
-        });
-    }
-
-    renderWeeklyChart();
-
-    console.log("✅ Dashboard initialized with API");
 }
 
 function renderWeeklyChart() {
     const container = document.getElementById("homeWeeklyChart");
     if (!container) return;
 
-    // Simple chart using divs
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
     const data = [8, 7, 9, 6, 8];
 
