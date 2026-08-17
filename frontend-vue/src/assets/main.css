@@ -1,0 +1,79 @@
+/* src/assets/main.css */
+:root {
+  --primary: #272757;
+  --primary-light: #505081;
+  --primary-dark: #0f0e47;
+  --secondary: #8686ac;
+  --white: #ffffff;
+  --bg-light: #f0f2f7;
+  --border-color: #d8dce6;
+  --text-dark: #1a1a2e;
+  --text-muted: #5a5a7a;
+  --green: #43a047;
+  --green-dark: #1b5e20;
+  --orange: #fb8c00;
+  --red: #e53935;
+  --blue: #1a73e8;
+}
+
+body.dark-mode {
+  --bg-light: #13132a;
+  --border-color: #2a2a48;
+  --text-dark: #e8e8f2;
+  --text-muted: #8a8aaa;
+  background: #0e0e1a;
+}
+
+body.dark-mode .dash-stat-card,
+body.dark-mode .dash-chart-card,
+body.dark-mode .att-card,
+body.dark-mode .to-card,
+body.dark-mode .pay-card,
+body.dark-mode .pay-stat-card,
+body.dark-mode .rev-card,
+body.dark-mode .emp-card-wrap {
+  background: #161630 !important;
+  border: 1px solid #2a2a48 !important;
+  color: #e8e8f2 !important;
+}
+
+body.dark-mode .navbar {
+  background: #0f0e47 !important;
+}
+
+body.dark-mode .dash-hero {
+  background: linear-gradient(135deg, #0a5a52, #0d3d3a);
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast-custom {
+  background: #272757;
+  color: white;
+  padding: 14px 22px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  margin-bottom: 4px;
+}
+.toast-custom.success {
+  background: #1b5e20;
+}
+.toast-custom.danger {
+  background: #b71c1c;
+}
+.toast-custom.show {
+  opacity: 1;
+  transform: translateY(0);
+}
