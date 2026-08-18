@@ -1,19 +1,27 @@
-import dotenv from 'dotenv';
+// backend/app.js
+// REFERENCE FILE — only needed if your project doesn't already have a
+// main server file. If you already have one, just make sure it mounts
+// the payroll router at '/api', like this:
+//
+//   import payrollRouter from './routes/payroll.js';
+//   app.use('/api', payrollRouter);
+//
+// That one line is the important part — it's what makes the routes
+// inside payroll.js (e.g. '/payroll', '/payslips/employee/:id') respond
+// at '/api/payroll', '/api/payslips/employee/:id', etc.
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import payroll from './routes/payroll.js';
 
-dotenv.config();
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+app.use(cors());          // allows payroll.html (a different origin) to fetch from this server
+app.use(express.json());  // lets Express read JSON in request bodies
 
-
-// app.use('/api', payroll);
 app.use('/payroll', payroll);
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`API running on http://localhost:${PORT}`);
+  console.log(`ModernTech backend running at http://localhost:${PORT}`);
 });
