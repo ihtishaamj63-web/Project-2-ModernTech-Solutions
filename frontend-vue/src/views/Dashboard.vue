@@ -1,7 +1,6 @@
 <!-- src/views/Dashboard.vue -->
 <template>
   <div class="dash-container">
-    <!-- Hero Section -->
     <section class="dash-hero">
       <h5>MODERNTECH SOLUTIONS</h5>
       <h1>Welcome back, {{ userName }}.</h1>
@@ -13,17 +12,16 @@
       </div>
     </section>
 
-    <!-- Stats -->
     <section class="dash-stats">
       <div class="dash-stat-card">
-        <div class="dash-stat-icon blue"><i class="fa-solid fa-users"></i></div>
+        <div class="dash-stat-icon blue"><i class="bi bi-people-fill"></i></div>
         <h4>Total Employees</h4>
         <h2>{{ stats.total_employees || 0 }}</h2>
         <a href="#" @click.prevent="router.push('/employees')" class="dash-stat-link blue-link">View Employees →</a>
       </div>
 
       <div class="dash-stat-card">
-        <div class="dash-stat-icon orange"><i class="fa-solid fa-clock"></i></div>
+        <div class="dash-stat-icon orange"><i class="bi bi-clock-fill"></i></div>
         <h4>Pending Requests</h4>
         <h2>{{ stats.pending_timeoff || 0 }}</h2>
         <p>Time Off</p>
@@ -31,7 +29,7 @@
       </div>
 
       <div class="dash-stat-card">
-        <div class="dash-stat-icon green"><i class="fa-solid fa-star"></i></div>
+        <div class="dash-stat-icon green"><i class="bi bi-star-fill"></i></div>
         <h4>Completed Reviews</h4>
         <h2>{{ stats.total_reviews || 0 }}</h2>
         <p>This Quarter</p>
@@ -39,7 +37,7 @@
       </div>
 
       <div class="dash-stat-card">
-        <div class="dash-stat-icon blue"><i class="fa-solid fa-money-bill-wave"></i></div>
+        <div class="dash-stat-icon blue"><i class="bi bi-cash-stack"></i></div>
         <h4>Payroll Summary</h4>
         <h2>R {{ Number(stats.payroll_total || 0).toLocaleString('en-ZA') }}</h2>
         <p>{{ stats.total_employees || 0 }} Employees Paid</p>

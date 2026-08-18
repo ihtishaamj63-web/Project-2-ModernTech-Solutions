@@ -190,25 +190,44 @@ function showToast(message, type) {
   else alert(message);
 }
 
+// Replace the loadData function in TimeOff.vue
 async function loadData() {
   loading.value = true;
   try {
+    // Auto-reject old pending requests
+    await api.put('/timeoff/cleanup');
+
     const empResponse = await api.get('/employees');
     const reqResponse = await api.get('/timeoff');
 
     if (empResponse.data.success) {
-      employees.value = empResponse.data.data;
+      employees.value = empResponse.data.data.map(emp => ({
+        ...emp,
+        employeeId: emp.emp_id,
+        name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown',
+      }));
     }
 
     if (reqResponse.data.success) {
-      requests.value = reqResponse.data.data.map(r => ({
-        ...r,
-        employeeName: `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Unknown',
-        initials: (r.first_name?.[0] || '') + (r.last_name?.[0] || ''),
-        color: getDepartmentColor(r.department),
-        position: r.position || 'N/A',
-        days: 1,
-      }));
+      requests.value = reqResponse.data.data.map(r => {
+        const startDate = new Date(r.start_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' });
+        const endDate = new Date(r.end_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+        
+        // Calculate days
+        const diffTime = Math.abs(new Date(r.end_date) - new Date(r.start_date));
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        return {
+          ...r,
+          employeeName: `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Unknown',
+          initials: (r.first_name?.[0] || '') + (r.last_name?.[0] || ''),
+          color: getDepartmentColor(r.department),
+          position: r.position || 'N/A',
+          // FIX: Map start_date and end_date to a formatted string
+          date: `${startDate} - ${endDate}`,
+          days: days,
+        };
+      });
     }
   } catch (error) {
     console.error('Error loading data:', error);

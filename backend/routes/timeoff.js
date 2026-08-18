@@ -20,6 +20,18 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
+// PUT /api/timeoff/cleanup - Auto-deny old pending requests
+router.put('/cleanup', authMiddleware, async (req, res) => {
+    try {
+        await pool.query(
+            "UPDATE timeoff SET status = 'denied', denial_reason = 'Automatically rejected (past date)' WHERE status = 'pending' AND start_date < CURDATE()"
+        );
+        res.json({ success: true, message: 'Old requests cleaned up' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // POST /api/timeoff
 router.post('/', authMiddleware, async (req, res) => {
     try {

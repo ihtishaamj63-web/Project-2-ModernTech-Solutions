@@ -184,7 +184,7 @@
               </div>
               <div class="mb-3">
                 <label class="form-label fw-semibold">Status</label>
-                <select class="form-select" v-model="logForm.status" required>
+                <select class="form-select" v-model="logForm.status" required @change="handleStatusChange">
                   <option value="">Select status...</option>
                   <option value="present">Present</option>
                   <option value="absent">Absent</option>
@@ -193,13 +193,26 @@
                   <option value="on_leave">On Leave</option>
                 </select>
               </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Check In Time (Optional)</label>
-                <input type="time" class="form-control" v-model="logForm.checkIn" />
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold">Check Out Time (Optional)</label>
-                <input type="time" class="form-control" v-model="logForm.checkOut" />
+              
+              <!-- FIX: Strict Dropdown Selects instead of clunky Time Wheels -->
+              <div class="row" v-if="logForm.status === 'present' || logForm.status === 'late' || logForm.status === 'half_day'">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold">Check In Time</label>
+                  <select class="form-select" v-model="logForm.checkIn">
+                    <option value="">Select time...</option>
+                    <option v-for="t in checkInTimes" :key="t" :value="t">{{ formatTime(t) }}</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold">Check Out Time</label>
+                  <select class="form-select" v-model="logForm.checkOut">
+                    <option value="">Select time...</option>
+                    <option v-for="t in checkOutTimes" :key="t" :value="t">{{ formatTime(t) }}</option>
+                  </select>
+                </div>
+                <div class="col-12 mb-3 text-muted text-center">
+                  <small>Calculated Hours: <strong>{{ calculatedHours }}h</strong></small>
+                </div>
               </div>
             </form>
           </div>
@@ -262,12 +275,24 @@ const { isHR, state } = useAuth();
 const loading = ref(false);
 const saving = ref(false);
 const employeeList = ref([]);
-const allRecords = ref([]); // Flat list from API
+const allRecords = ref([]);
 const search = ref('');
 const selectedEmp = ref(null);
 
 const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const todayStr = new Date().toISOString().split('T')[0];
+
+// FIX: Generate today's date locally to prevent UTC timezone shifting
+const getLocalTodayStr = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+const todayStr = getLocalTodayStr();
+
+const checkInTimes = ['07:00:00', '07:30:00', '08:00:00', '08:30:00', '09:00:00', '09:30:00', '10:00:00'];
+const checkOutTimes = ['16:00:00', '16:30:00', '17:00:00', '17:30:00', '18:00:00', '18:30:00', '19:00:00'];
 
 const logForm = ref({
   employeeId: '',
@@ -287,7 +312,6 @@ const filteredRoster = computed(() => {
 
 const myHistory = computed(() => {
   if (!state.user) return [];
-  // Find the logged-in user's emp_id
   const myEmp = employeeList.value.find(e => e.user_id === state.user.user_id);
   if (!myEmp) return [];
   
@@ -303,13 +327,16 @@ const selectedEmpHistory = computed(() => {
     .sort((a, b) => new Date(b.attendance_date) - new Date(a.attendance_date));
 });
 
-// Generate last 14 days for chart
 const chartData = computed(() => {
   const days = [];
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
+    // Local YYYY-MM-DD for chart comparison
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     
     const dayRecords = allRecords.value.filter(r => r.attendance_date === dateStr);
     
@@ -324,14 +351,42 @@ const chartData = computed(() => {
   return days;
 });
 
+// FIX: Calculate hours dynamically based on strict dropdown selections
+const calculatedHours = computed(() => {
+  if (!logForm.value.checkIn || !logForm.value.checkOut) return 0;
+  const [inH, inM] = logForm.value.checkIn.split(':').map(Number);
+  const [outH, outM] = logForm.value.checkOut.split(':').map(Number);
+  const diff = (outH + outM / 60) - (inH + inM / 60);
+  return diff > 0 ? diff.toFixed(1) : 0;
+});
+
+// FIX: Robust date formatter that forces local time parsing
+function normalizeDate(dateInput) {
+  if (!dateInput) return null;
+  if (typeof dateInput === 'string' && dateInput.length === 10) return dateInput;
+  
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return null;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+  const normalized = normalizeDate(dateStr);
+  if (!normalized) return '—';
+  // Create a local date object to display it properly
+  const [y, m, d] = normalized.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function formatTime(timeStr) {
   if (!timeStr) return '—';
-  return timeStr.substring(0, 5);
+  // Format HH:MM:SS to HH:MM
+  return String(timeStr).substring(0, 5);
 }
 
 function formatStatus(status) {
@@ -344,7 +399,7 @@ function statusClass(status) {
   if (status === 'absent') return 'absent';
   if (status === 'on_leave' || status === 'half_day') return 'on-leave';
   if (status === 'late') return 'late';
-  return 'probation'; // Not recorded
+  return 'probation';
 }
 
 function getDepartmentColor(dept) {
@@ -353,6 +408,14 @@ function getDepartmentColor(dept) {
     Marketing: '#9C27B0', Design: '#00BCD4', IT: '#607D8B', Finance: '#795548', Support: '#3F51B5'
   };
   return colors[dept] || '#8686AC';
+}
+
+function handleStatusChange() {
+  // If status doesn't require times, clear them
+  if (logForm.value.status === 'absent' || logForm.value.status === 'on_leave') {
+    logForm.value.checkIn = '';
+    logForm.value.checkOut = '';
+  }
 }
 
 function openLogModal() {
@@ -379,6 +442,12 @@ async function submitAttendance() {
     return;
   }
 
+  // If Present/Late, ensure times are selected
+  if ((status === 'present' || status === 'late' || status === 'half_day') && (!checkIn || !checkOut)) {
+    showToast('Please select Check In and Check Out times', 'danger');
+    return;
+  }
+
   saving.value = true;
   try {
     await api.post('/attendance', {
@@ -387,14 +456,14 @@ async function submitAttendance() {
       status: status,
       check_in_time: checkIn || null,
       check_out_time: checkOut || null,
-      hours_worked: 8.0,
+      hours_worked: calculatedHours.value || 0,
     });
     
     showToast('Attendance logged successfully', 'success');
     const modal = Modal.getInstance(document.getElementById('attLogModal'));
     if (modal) modal.hide();
     
-    await loadData(); // Refresh data
+    await loadData();
   } catch (error) {
     console.error('Submit error:', error);
     showToast(error.response?.data?.error || 'Failed to log attendance. Record might already exist.', 'danger');
@@ -447,9 +516,12 @@ async function loadData() {
     }
 
     if (attResponse.data.success) {
-      allRecords.value = attResponse.data.data;
+      // FIX: Normalize dates right when we fetch them using local time
+      allRecords.value = attResponse.data.data.map(r => ({
+        ...r,
+        attendance_date: normalizeDate(r.attendance_date)
+      }));
       
-      // Map today's records to the employee roster for HR view
       let present = 0, absent = 0, leave = 0;
       
       employeeList.value.forEach(emp => {
@@ -464,7 +536,6 @@ async function loadData() {
         }
       });
 
-      // Calculate 14-day rate
       let totalRecords = 0;
       let presentRecords = 0;
       chartData.value.forEach(day => {

@@ -9,55 +9,97 @@ body {
 
 /* Dark Mode Overrides */
 body.dark-mode {
-  background-color: #121212 !important;
-  color: #e0e0e0 !important;
+  background-color: #1e1e2f !important;
+  color: #cfd3dc !important;
 }
 
+body.dark-mode .app-wrapper,
+body.dark-mode .app-main {
+  background-color: #1e1e2f !important;
+  color: #cfd3dc !important;
+}
+
+/* Force all cards/containers to dark */
 body.dark-mode .card,
 body.dark-mode .att-card,
 body.dark-mode .pay-card,
 body.dark-mode .emp-card-wrap,
 body.dark-mode .to-card,
 body.dark-mode .dash-stat-card,
-body.dark-mode .att-summary-card {
-  background-color: #1e1e1e !important;
-  color: #e0e0e0 !important;
-  border-color: #333 !important;
+body.dark-mode .att-summary-card,
+body.dark-mode .rev-card,
+body.dark-mode .pay-stat-card,
+body.dark-mode .dash-hero {
+  background-color: #27293d !important;
+  color: #cfd3dc !important;
+  border-color: #444 !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
 }
 
-body.dark-mode .form-control,
-body.dark-mode .form-select {
-  background-color: #2c2c2c !important;
-  color: #fff !important;
-  border-color: #444 !important;
+/* Force all text to white */
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4, 
+body.dark-mode h5, 
+body.dark-mode h6,
+body.dark-mode .att-page-title,
+body.dark-mode .pay-title,
+body.dark-mode .emp-page__title,
+body.dark-mode .to-page-title,
+body.dark-mode .pay-emp-name,
+body.dark-mode .att-employee-name,
+body.dark-mode .emp-row__name span {
+  color: #ffffff !important;
 }
 
+body.dark-mode .text-muted,
+body.dark-mode .emp-row__muted, 
+body.dark-mode .pay-emp-id, 
+body.dark-mode .pay-stat-label,
+body.dark-mode .att-summary-label,
+body.dark-mode .to-detail-label {
+  color: #9ba2b5 !important;
+}
+
+/* Tables */
 body.dark-mode .table {
-  color: #e0e0e0 !important;
-  border-color: #333 !important;
+  color: #cfd3dc !important;
+  border-color: #444 !important;
 }
-
 body.dark-mode .table thead th {
-  background-color: #2c2c2c !important;
+  background-color: #1e1e2f !important;
   color: #fff !important;
   border-color: #444 !important;
 }
-
 body.dark-mode .table tbody td {
-  border-color: #333 !important;
+  border-color: #444 !important;
+}
+body.dark-mode .table-hover tbody tr:hover {
+  background-color: #2c2c44 !important;
 }
 
-body.dark-mode .text-muted {
-  color: #999 !important;
+/* Inputs */
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode .emp-search-bar,
+body.dark-mode .pay-search-box input,
+body.dark-mode .att-search-box input {
+  background-color: #1e1e2f !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+body.dark-mode .form-control::placeholder {
+  color: #888 !important;
 }
 
+/* Modals */
 body.dark-mode .modal-content {
-  background-color: #1e1e1e !important;
-  color: #e0e0e0 !important;
+  background-color: #27293d !important;
+  color: #cfd3dc !important;
+  border-color: #444 !important;
 }
-
 body.dark-mode .modal-header,
 body.dark-mode .modal-footer {
-  border-color: #333 !important;
+  border-color: #444 !important;
 }

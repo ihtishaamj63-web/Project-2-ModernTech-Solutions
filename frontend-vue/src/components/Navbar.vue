@@ -21,7 +21,7 @@
             <div class="fw-bold">{{ userName }}</div>
             <small>{{ formattedRole }} · ModernTech</small>
           </div>
-          <button class="btn btn-sm btn-outline-light me-2" @click="toggleNightMode" title="Toggle Dark Mode">
+          <button class="btn btn-sm btn-outline-light me-2" @click="$emit('toggle-dark-mode')" title="Toggle Dark Mode">
             <i class="bi" :class="isDarkMode ? 'bi-sun-fill' : 'bi-moon-stars-fill'"></i>
           </button>
           <button class="btn btn-sm btn-outline-light" @click="handleLogout">Logout</button>
@@ -32,28 +32,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import { useAuth } from '../stores/auth';
 import { useRouter } from 'vue-router';
 
+defineProps(['isDarkMode']);
+const emit = defineEmits(['toggle-dark-mode']);
+
 const { state, logout, userName } = useAuth();
 const router = useRouter();
-const isDarkMode = ref(false);
 
-onMounted(() => {
-  if (localStorage.getItem('nightMode') === 'enabled') {
-    document.body.classList.add('dark-mode');
-    isDarkMode.value = true;
-  }
-});
-
-function toggleNightMode() {
-  document.body.classList.toggle('dark-mode');
-  isDarkMode.value = document.body.classList.contains('dark-mode');
-  localStorage.setItem('nightMode', isDarkMode.value ? 'enabled' : 'disabled');
-}
-
-// FIX: Format database role (hr_staff -> HR Staff)
 const formattedRole = computed(() => {
   if (!state.user?.role) return 'Employee';
   return state.user.role
