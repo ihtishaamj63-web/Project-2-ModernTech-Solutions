@@ -43,7 +43,7 @@
                   </div>
                 </div>
                 <span class="to-request-status" :class="req.status.toLowerCase()">
-                  {{ req.status === 'approved' ? '✓' : req.status === 'denied' ? '✗' : '⏳' }} {{ req.status }}
+                  {{ req.status }}
                 </span>
               </div>
               <div class="to-request-details">
@@ -90,7 +90,7 @@
                 <label class="form-label fw-semibold">Leave Type</label>
                 <select class="form-select" v-model="newRequest.type" required>
                   <option value="">Select type...</option>
-                  <option v-for="type in leaveTypes" :key="type" :value="type">{{ type }}</option>
+                  <option v-for="type in leaveTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                 </select>
               </div>
               <div class="mb-3">
@@ -140,7 +140,6 @@ const newRequest = ref({
   reason: '',
 });
 
-// FIX: Use exact database ENUM values
 const leaveTypes = [
   { value: 'vacation', label: 'Vacation / Annual' },
   { value: 'sick_leave', label: 'Sick Leave' },
@@ -198,15 +197,10 @@ async function loadData() {
     const reqResponse = await api.get('/timeoff');
 
     if (empResponse.data.success) {
-      employees.value = empResponse.data.data.map(emp => ({
-        ...emp,
-        employeeId: emp.emp_id,
-        name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown',
-      }));
+      employees.value = empResponse.data.data;
     }
 
     if (reqResponse.data.success) {
-      // FIX: Map the database ENUM value to a nice display label
       const typeMap = { 
         vacation: 'Vacation', 
         sick_leave: 'Sick Leave', 
@@ -227,7 +221,7 @@ async function loadData() {
           initials: (r.first_name?.[0] || '') + (r.last_name?.[0] || ''),
           color: getDepartmentColor(r.department),
           position: r.position || 'N/A',
-          type: typeMap[r.timeoff_type] || r.timeoff_type, // Display nice label
+          type: typeMap[r.timeoff_type] || r.timeoff_type,
           date: `${startDate} - ${endDate}`,
           days: days,
         };
@@ -268,7 +262,7 @@ async function submitNewRequest() {
       emp_id: employeeId,
       start_date: startDate,
       end_date: endDate,
-      timeoff_type: type, // Sends exact DB value (e.g., 'sick_leave')
+      timeoff_type: type,
       reason: reason || 'No reason provided',
     });
 
@@ -362,10 +356,20 @@ onMounted(() => {
 .to-request-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; color: white; flex-shrink: 0; }
 .to-request-name { font-weight: 600; font-size: 14px; color: #1a1a2e; }
 .to-request-position { font-size: 12px; color: #5a5a7a; }
-.to-request-status { padding: 3px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.to-request-status.pending { background: #fff3e0; color: #bf360c; }
-.to-request-status.approved { background: #e8f5e9; color: #1b5e20; }
-.to-request-status.denied { background: #ffebee; color: #b71c1c; }
+
+/* FIX: Professional Status Badges */
+.to-request-status { 
+  padding: 4px 12px; 
+  border-radius: 4px; 
+  font-size: 12px; 
+  font-weight: 600; 
+  text-transform: capitalize; 
+  border: 1px solid transparent;
+}
+.to-request-status.pending { background: #fff3e0; color: #bf360c; border-color: #ffb74d; }
+.to-request-status.approved { background: #e8f5e9; color: #1b5e20; border-color: #66bb6a; }
+.to-request-status.denied { background: #ffebee; color: #b71c1c; border-color: #e57373; }
+
 .to-request-details { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 6px 0; }
 .to-detail-label { font-size: 12px; color: #5a5a7a; font-weight: 500; }
 .to-detail-value { font-size: 13px; color: #1a1a2e; font-weight: 500; }
