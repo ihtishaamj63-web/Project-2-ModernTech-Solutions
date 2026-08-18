@@ -9,11 +9,25 @@
       </div>
 
       <div class="emp-card-wrap">
+        <!-- Step-by-step workflow guide -->
+        <div class="emp-workflow-guide">
+          <h6><i class="bi bi-info-circle"></i> Follow these steps to add an employee:</h6>
+          <ol>
+            <li><strong>Step 1:</strong> Select a Department</li>
+            <li><strong>Step 2:</strong> Choose a Position (based on selected department)</li>
+            <li><strong>Step 3:</strong> Select a Salary Range (based on position)</li>
+            <li><strong>Step 4:</strong> Complete remaining employee details</li>
+          </ol>
+        </div>
+
         <form class="emp-form-grid" @submit.prevent="saveEmployee">
-          <!-- 1. Department -->
-          <div class="emp-form-group">
-            <label>1. Department <span class="required">*</span></label>
-            <select v-model="form.department" required @change="updatePositions">
+          <!-- STEP 1: DEPARTMENT -->
+          <div class="emp-form-group emp-workflow-step">
+            <div class="step-label-container">
+              <span class="step-badge" :class="{ 'active': form.department }">1</span>
+              <label>Department <span class="required">*</span></label>
+            </div>
+            <select v-model="form.department" required @change="updatePositions" class="form-control">
               <option value="">Select Department</option>
               <option>Development</option>
               <option>HR</option>
@@ -25,50 +39,68 @@
               <option>Finance</option>
               <option>Support</option>
             </select>
+            <small class="help-text"><i class="bi bi-arrow-right-short"></i> Start here – selecting a department will populate available positions</small>
           </div>
 
-          <!-- 2. Position (Disabled until Department is chosen) -->
-          <div class="emp-form-group">
-            <label>2. Position <span class="required">*</span></label>
-            <select v-model="form.position" required :disabled="!form.department" :class="{ 'disabled-select': !form.department }">
+          <!-- STEP 2: POSITION -->
+          <div class="emp-form-group emp-workflow-step">
+            <div class="step-label-container">
+              <span class="step-badge" :class="{ 'active': form.position }">2</span>
+              <label>Position <span class="required">*</span></label>
+            </div>
+            <select v-model="form.position" required :disabled="!form.department" class="form-control" :class="{ 'disabled-select': !form.department }">
               <option value="">Select Position</option>
               <option v-for="pos in availablePositions" :key="pos" :value="pos">{{ pos }}</option>
             </select>
-            <small v-if="!form.department" class="help-text">Select a department first.</small>
+            <small class="help-text" v-if="!form.department"><i class="bi bi-lock-fill"></i> Select a department first</small>
+            <small class="help-text" v-else><i class="bi bi-check-circle-fill text-success"></i> Choose a position for {{ form.department }}</small>
           </div>
 
-          <!-- 3. Salary (Disabled until Position is chosen) -->
-          <div class="emp-form-group">
-            <label>3. Monthly Salary (R) <span class="required">*</span></label>
-            <input type="number" v-model="form.salary" required min="5000" max="500000" step="1000" placeholder="e.g. 45000" :disabled="!form.position" :class="{ 'disabled-select': !form.position }" />
-            <small class="help-text">Select a salary range below, or type directly. Increments of R1,000.</small>
-            <select v-model="selectedSalaryTier" class="salary-range" @change="applySalaryTier" :disabled="!form.position" :class="{ 'disabled-select': !form.position }">
+          <!-- STEP 3: SALARY -->
+          <div class="emp-form-group emp-workflow-step">
+            <div class="step-label-container">
+              <span class="step-badge" :class="{ 'active': form.salary }">3</span>
+              <label>Monthly Salary (R) <span class="required">*</span></label>
+            </div>
+            <input type="number" v-model="form.salary" required min="5000" max="500000" step="1000" placeholder="e.g. 45000" :disabled="!form.position" class="form-control" :class="{ 'disabled-select': !form.position }" />
+            <select v-model="selectedSalaryTier" class="form-control salary-range mt-2" @change="applySalaryTier" :disabled="!form.position" :class="{ 'disabled-select': !form.position }">
               <option value="">Select salary range...</option>
-              <option v-for="tier in salaryTiers" :key="tier.id" :value="tier">
+              <option v-for="tier in salaryTiers" :key="tier.id" :value="tier.id">
                 {{ tier.label }}
               </option>
             </select>
+            <small class="help-text" v-if="!form.position"><i class="bi bi-lock-fill"></i> Select a position first</small>
+            <small class="help-text" v-else><i class="bi bi-check-circle-fill text-success"></i> Use the dropdown to choose a range, or type directly. Increments of R1,000.</small>
           </div>
 
-          <!-- 4. Contact Details -->
-          <div class="emp-form-group">
-            <label>Full Name <span class="required">*</span></label>
-            <input type="text" v-model="form.name" required placeholder="e.g. Bongiwe Dube" />
+          <!-- STEP 4: BASIC INFO -->
+          <div class="emp-form-group emp-workflow-step">
+            <div class="step-label-container">
+              <span class="step-badge" :class="{ 'active': form.name }">4</span>
+              <label>Full Name <span class="required">*</span></label>
+            </div>
+            <input type="text" v-model="form.name" required placeholder="e.g. Bongiwe Dube" class="form-control" />
           </div>
 
-          <div class="emp-form-group">
-            <label>Email <span class="required">*</span></label>
-            <input type="email" v-model="form.email" required placeholder="name@moderntech.com" />
+          <div class="emp-form-group emp-workflow-step">
+            <div class="step-label-container">
+              <span class="step-badge" :class="{ 'active': form.email }">4</span>
+              <label>Email <span class="required">*</span></label>
+            </div>
+            <input type="email" v-model="form.email" required placeholder="name@moderntech.com" class="form-control" />
           </div>
 
-          <div class="emp-form-group">
-            <label>Start Date <span class="required">*</span></label>
-            <input type="date" v-model="form.startDate" required />
+          <div class="emp-form-group emp-workflow-step">
+            <div class="step-label-container">
+              <span class="step-badge" :class="{ 'active': form.startDate }">4</span>
+              <label>Start Date <span class="required">*</span></label>
+            </div>
+            <input type="date" v-model="form.startDate" required class="form-control" />
           </div>
 
           <div class="emp-form-group emp-form-group--full">
             <label>Employment History</label>
-            <textarea v-model="form.history" rows="3" placeholder="e.g. Joined in 2026, bringing 5 years of industry experience..."></textarea>
+            <textarea v-model="form.history" rows="3" placeholder="e.g. Joined in 2026, bringing 5 years of industry experience..." class="form-control"></textarea>
           </div>
 
           <div class="emp-form-actions emp-form-group--full">
@@ -108,7 +140,7 @@ const form = ref({
 const isEdit = ref(false);
 const employeeId = ref(null);
 const saving = ref(false);
-const selectedSalaryTier = ref(null);
+const selectedSalaryTier = ref('');
 
 const today = new Date().toLocaleDateString('en-ZA', {
   weekday: 'long',
@@ -129,7 +161,6 @@ const positionMap = {
   Support: ['Customer Support Representative', 'Technical Support Engineer', 'Customer Success Manager', 'Support Lead'],
 };
 
-// FIX: Generate dynamic salary tiers based on department, fallback to generic
 const salaryTiers = computed(() => {
   const deptTiers = {
     Development: [
@@ -158,18 +189,18 @@ const availablePositions = ref([]);
 function updatePositions() {
   const dept = form.value.department;
   availablePositions.value = positionMap[dept] || [];
-  // FIX: Reset position and salary if department changes
   form.value.position = '';
   form.value.salary = '';
-  selectedSalaryTier.value = null;
+  selectedSalaryTier.value = '';
 }
 
 function applySalaryTier() {
   if (selectedSalaryTier.value) {
-    const tier = selectedSalaryTier.value;
-    const midPoint = (Number(tier.min) + Number(tier.max)) / 2;
-    // FIX: Round to the nearest 1000 so the step="1000" validation doesn't reject it
-    form.value.salary = Math.round(midPoint / 1000) * 1000;
+    const tier = salaryTiers.value.find(t => t.id === selectedSalaryTier.value);
+    if (tier) {
+      const midPoint = (Number(tier.min) + Number(tier.max)) / 2;
+      form.value.salary = Math.round(midPoint / 1000) * 1000;
+    }
   }
 }
 
@@ -178,7 +209,6 @@ async function loadEmployee(id) {
     const response = await api.get(`/employees/${id}`);
     const emp = response.data.data;
     
-    // Fetch payroll to get salary
     let salary = '';
     try {
       const payRes = await api.get('/payroll');
@@ -198,54 +228,68 @@ async function loadEmployee(id) {
       history: emp.employment_history || '',
     };
     
-    // Manually trigger position update without resetting the value
     availablePositions.value = positionMap[form.value.department] || [];
     
     employeeId.value = id;
     isEdit.value = true;
   } catch (error) {
     console.error('Error loading employee:', error);
-    showToast('Failed to load employee', 'danger');
+    showToast('Failed to load employee data', 'danger');
     router.push('/employees');
   }
 }
 
+// FIX: Personalized Error Handling
 async function saveEmployee() {
   if (!isHR.value) {
-    showToast('Access denied. HR staff only.', 'danger');
-    return;
+    return showToast('Access denied. Only HR staff can perform this action.', 'danger');
   }
 
-  const { name, position, department, salary, email, startDate, history } = form.value;
-  if (!name || !position || !department || !salary || !email || !startDate) {
-    showToast('Please fill in all required fields', 'danger');
-    return;
+  // Step-by-step validation
+  if (!form.value.department) {
+    return showToast('Step 1: Please select a department.', 'danger');
+  }
+  if (!form.value.position) {
+    return showToast('Step 2: Please choose a position.', 'danger');
+  }
+  if (!form.value.salary || Number(form.value.salary) < 5000) {
+    return showToast('Step 3: Please enter a valid salary (minimum R5,000).', 'danger');
+  }
+  if (!form.value.name || form.value.name.split(' ').length < 2) {
+    return showToast('Step 4: Please enter the employee\'s full name (First & Last).', 'danger');
+  }
+  if (!form.value.email || !form.value.email.includes('@') || !form.value.email.includes('.')) {
+    return showToast('Step 4: Please enter a valid email address.', 'danger');
+  }
+  if (!form.value.startDate) {
+    return showToast('Step 4: Please select a start date.', 'danger');
   }
 
   saving.value = true;
   try {
     const data = {
-      first_name: name.split(' ')[0],
-      last_name: name.split(' ').slice(1).join(' '),
-      position,
-      department,
-      salary: Number(salary),
-      email,
-      hire_date: startDate,
-      employment_history: history,
+      first_name: form.value.name.split(' ')[0],
+      last_name: form.value.name.split(' ').slice(1).join(' '),
+      position: form.value.position,
+      department: form.value.department,
+      salary: Number(form.value.salary),
+      email: form.value.email,
+      hire_date: form.value.startDate,
+      employment_history: form.value.history,
     };
 
     if (isEdit.value) {
       await api.put(`/employees/${employeeId.value}`, data);
-      showToast(`${name} updated successfully`, 'success');
+      showToast(`${form.value.name} updated successfully`, 'success');
     } else {
       await api.post('/employees', data);
-      showToast(`${name} added successfully`, 'success');
+      showToast(`${form.value.name} added successfully! Login created with password: password123`, 'success');
     }
     router.push('/employees');
   } catch (error) {
     console.error('Save error:', error);
-    showToast(error.response?.data?.error || 'Failed to save employee', 'danger');
+    const errMsg = error.response?.data?.error || 'Failed to save employee. Check console for details.';
+    showToast(errMsg, 'danger');
   } finally {
     saving.value = false;
   }
@@ -271,27 +315,78 @@ onMounted(() => {
 .emp-page { padding: 32px 0 64px; }
 .emp-page__header { margin-bottom: 24px; }
 .emp-page__date { font-size: 0.75rem; letter-spacing: 0.8px; color: #5a5a7a; margin-bottom: 10px; text-transform: uppercase; font-weight: 600; }
-.emp-page__title { font-size: 2.1rem; font-weight: 800; }
+.emp-page__title { font-size: 2.1rem; font-weight: 800; color: #272757; }
 .text-muted { color: #5a5a7a; font-size: 14px; margin-top: 4px; }
 
 .emp-card-wrap { background: white; border: 1px solid #d8dce6; border-radius: 8px; padding: 24px; box-shadow: 0 4px 16px rgba(15,14,71,0.06); overflow: hidden; max-width: 800px; margin: 0 auto; }
+
+/* Fix Light Mode Contrast for Instructions Box */
+.emp-workflow-guide { 
+  margin-bottom: 24px; 
+  padding: 16px; 
+  background: #eef0f6; /* Slightly darker background for light mode contrast */
+  border-radius: 8px; 
+  border-left: 4px solid #272757; 
+}
+.emp-workflow-guide h6 { 
+  margin: 0 0 8px 0; 
+  color: #272757; 
+  font-weight: 600; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+}
+.emp-workflow-guide ol { 
+  margin: 0; 
+  padding-left: 20px; 
+  font-size: 13px; 
+  color: #4a4a6a; /* Darker text for readability */
+}
+.emp-workflow-guide li { 
+  margin-bottom: 4px; 
+}
+
 .emp-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .emp-form-group { display: flex; flex-direction: column; gap: 8px; }
 .emp-form-group--full { grid-column: 1 / -1; }
-.emp-form-group label { font-size: 0.9rem; font-weight: 600; color: #505081; }
-.emp-form-group input, .emp-form-group select, .emp-form-group textarea { padding: 12px 14px; border: 1.5px solid #d8dce6; border-radius: 10px; font-size: 0.95rem; font-family: inherit; background: white; transition: 0.2s; }
-.emp-form-group input:focus, .emp-form-group select:focus, .emp-form-group textarea:focus { outline: none; border-color: #272757; box-shadow: 0 0 0 3px rgba(39,39,87,0.1); }
+.emp-form-group label { font-size: 0.9rem; font-weight: 600; color: #505081; margin: 0; }
 
-/* FIX: Styles for disabled state to enforce sequence */
-.disabled-select {
-  background-color: #f0f2f7 !important;
-  cursor: not-allowed !important;
-  opacity: 0.7;
+/* Fix Light Mode Contrast for Step Badges */
+.step-label-container { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  margin-bottom: 6px; 
+}
+.step-badge { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 24px; 
+  height: 24px; 
+  background: #b0b0c0; /* Medium grey so white text is visible in light mode */
+  color: #ffffff; 
+  border-radius: 50%; 
+  font-size: 12px; 
+  font-weight: bold; 
+  transition: 0.2s; 
+  border: 1px solid rgba(0,0,0,0.1); /* Subtle border */
+}
+.step-badge.active { 
+  background: #272757; 
+  color: #ffffff; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
 }
 
+.emp-form-group .form-control { padding: 12px 14px; border: 1.5px solid #d8dce6; border-radius: 10px; font-size: 0.95rem; font-family: inherit; background: white; transition: 0.2s; width: 100%; }
+.emp-form-group .form-control:focus { outline: none; border-color: #272757; box-shadow: 0 0 0 3px rgba(39,39,87,0.1); }
+
+.disabled-select { background-color: #f0f2f7 !important; cursor: not-allowed !important; opacity: 0.7; }
+
 .required { color: #e53935; }
-.help-text { color: #5a5a7a; font-size: 11px; margin-top: 2px; }
-.salary-range { margin-top: 6px; width: 100%; padding: 12px 14px; border: 1.5px solid #d8dce6; border-radius: 10px; font-size: 0.95rem; font-family: inherit; cursor: pointer; background: white; }
+.help-text { color: #5a5a7a; font-size: 11px; margin-top: 2px; display: block; }
+.text-success { color: #43a047 !important; margin-right: 4px; }
+.salary-range { margin-top: 6px; }
 
 .emp-form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
 .emp-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-size: 0.93rem; height: 46px; text-decoration: none; transition: 0.2s; }
