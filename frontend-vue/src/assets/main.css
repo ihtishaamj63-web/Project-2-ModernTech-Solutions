@@ -244,3 +244,61 @@ body.dark-mode .att-status-badge.probation {
 body.dark-mode .att-status-badge.probation .att-status-dot {
   background: #8686ac !important;
 }
+
+/* ==========================================
+   CALENDAR MODAL - DARK MODE FIXES
+   ========================================== */
+
+body.dark-mode .current-month {
+  color: #ffffff !important;
+}
+
+body.dark-mode .calendar-weekday {
+  color: #9ba2b5 !important;
+}
+
+body.dark-mode .calendar-day {
+  background: #1e1e2f !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode .calendar-day.blank {
+  background: transparent !important;
+  border: none !important;
+}
+
+body.dark-mode .calendar-day .day-number {
+  color: #ffffff !important;
+}
+
+body.dark-mode .calendar-day.active {
+  border-color: #43a047 !important;
+}
+body.dark-mode .calendar-day.active .day-status {
+  background: #1b5e20 !important;
+  color: #a5d6a7 !important;
+}
+
+body.dark-mode .calendar-day.absent {
+  border-color: #e53935 !important;
+}
+body.dark-mode .calendar-day.absent .day-status {
+  background: #b71c1c !important;
+  color: #ef9a9a !important;
+}
+
+body.dark-mode .calendar-day.on-leave {
+  border-color: #fb8c00 !important;
+}
+body.dark-mode .calendar-day.on-leave .day-status {
+  background: #4e342e !important;
+  color: #ffcc80 !important;
+}
+
+body.dark-mode .calendar-day.late {
+  border-color: #1a73e8 !important;
+}
+body.dark-mode .calendar-day.late .day-status {
+  background: #0d47a1 !important;
+  color: #90caf9 !important;
+}

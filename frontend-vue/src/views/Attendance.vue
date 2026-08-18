@@ -1,4 +1,4 @@
-<!-- frontend-vue/src/views/Attendance.vue -->
+<!-- src/views/Attendance.vue -->
 <template>
   <div class="att-main-content">
     <div class="att-page-header">
@@ -80,16 +80,20 @@
       </div>
     </template>
 
-    <!-- HR View: Today's Roster (Paginated) -->
-    <div class="att-card card shadow-sm mb-4" v-if="isHR">
+    <!-- Main Table Area (For both HR and Employees) -->
+    <div class="att-card card shadow-sm">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <h5 class="att-card-title mb-0">
-            <i class="bi bi-list-ul"></i> Today's Employee Roster
+            <i class="bi bi-list-ul"></i> 
+            {{ isHR ? "Today's Employee Roster" : 'My Recent Attendance' }}
           </h5>
-          <div class="att-search-box">
+          <div class="att-search-box" v-if="isHR">
             <input type="text" v-model="search" placeholder="Search employee..." />
           </div>
+          <button v-if="!isHR" class="btn btn-sm btn-outline-primary" @click="viewMyCalendar">
+            <i class="bi bi-calendar-week me-1"></i> View My Calendar
+          </button>
         </div>
 
         <div v-if="loading" class="text-center py-4">
@@ -99,69 +103,68 @@
         <div v-else class="table-responsive">
           <table class="att-table table table-hover">
             <thead>
-              <tr>
+              <tr v-if="isHR">
                 <th>Employee</th>
                 <th>Department</th>
                 <th>Today Status</th>
                 <th>Check In</th>
                 <th>Action</th>
               </tr>
+              <tr v-else>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Hours</th>
+              </tr>
             </thead>
             <tbody>
-              <tr v-for="emp in paginatedRoster" :key="emp.emp_id">
-                <td>
-                  <div class="att-employee-cell">
-                    <div class="att-employee-avatar" :style="{ background: emp.color }">{{ emp.initials }}</div>
-                    <span class="att-employee-name">{{ emp.name }}</span>
-                  </div>
-                </td>
-                <td>{{ emp.department }}</td>
-                <td>
-                  <span class="att-status-badge" :class="statusClass(emp.todayStatus)">
-                    <span class="att-status-dot"></span> {{ formatStatus(emp.todayStatus) }}
-                  </span>
-                </td>
-                <td>{{ emp.checkIn ? formatTime(emp.checkIn) : '—' }}</td>
-                <td><button class="btn btn-sm btn-outline-primary" @click="viewHistory(emp)"><i class="bi bi-eye"></i> Calendar</button></td>
-              </tr>
+              <!-- HR View: Roster -->
+              <template v-if="isHR">
+                <tr v-for="emp in paginatedRoster" :key="emp.emp_id">
+                  <td>
+                    <div class="att-employee-cell">
+                      <div class="att-employee-avatar" :style="{ background: emp.color }">{{ emp.initials }}</div>
+                      <span class="att-employee-name">{{ emp.name }}</span>
+                    </div>
+                  </td>
+                  <td>{{ emp.department }}</td>
+                  <td>
+                    <span class="att-status-badge" :class="statusClass(emp.todayStatus)">
+                      <span class="att-status-dot"></span> {{ formatStatus(emp.todayStatus) }}
+                    </span>
+                  </td>
+                  <td>{{ emp.checkIn ? formatTime(emp.checkIn) : '—' }}</td>
+                  <td><button class="btn btn-sm btn-outline-primary" @click="viewCalendar(emp)"><i class="bi bi-calendar3"></i> Calendar</button></td>
+                </tr>
+              </template>
+
+              <!-- Employee View: History -->
+              <template v-else>
+                <tr v-for="record in paginatedMyHistory" :key="record.attendance_id">
+                  <td>{{ formatDate(record.attendance_date) }}</td>
+                  <td>
+                    <span class="att-status-badge" :class="statusClass(record.status)">
+                      <span class="att-status-dot"></span> {{ formatStatus(record.status) }}
+                    </span>
+                  </td>
+                  <td>{{ record.check_in_time ? formatTime(record.check_in_time) : '—' }}</td>
+                  <td>{{ record.check_out_time ? formatTime(record.check_out_time) : '—' }}</td>
+                  <td>{{ record.hours_worked ? record.hours_worked + 'h' : '—' }}</td>
+                </tr>
+                <tr v-if="paginatedMyHistory.length === 0">
+                  <td colspan="5" class="text-center text-muted py-4">No attendance records found for you.</td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
         
         <!-- Pagination -->
-        <div class="att-pagination" v-if="filteredRoster.length > itemsPerPage">
+        <div class="att-pagination" v-if="totalPages > 1">
           <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="currentPage--">Prev</button>
           <span>Page {{ currentPage }} of {{ totalPages }}</span>
           <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Employee View: My Attendance Calendar -->
-    <div class="att-card card shadow-sm" v-if="!isHR">
-      <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h5 class="att-card-title mb-0"><i class="bi bi-calendar-week"></i> My Attendance History</h5>
-          <div class="calendar-nav">
-            <button class="btn btn-sm btn-outline-secondary" @click="prevMonth"><i class="bi bi-chevron-left"></i></button>
-            <span class="current-month">{{ calendarMonthYear }}</span>
-            <button class="btn btn-sm btn-outline-secondary" @click="nextMonth"><i class="bi bi-chevron-right"></i></button>
-          </div>
-        </div>
-        
-        <div class="calendar-grid">
-          <div class="calendar-weekday">Sun</div>
-          <div class="calendar-weekday">Mon</div>
-          <div class="calendar-weekday">Tue</div>
-          <div class="calendar-weekday">Wed</div>
-          <div class="calendar-weekday">Thu</div>
-          <div class="calendar-weekday">Fri</div>
-          <div class="calendar-weekday">Sat</div>
-          
-          <div v-for="(day, index) in calendarDays" :key="index" class="calendar-day" :class="{ 'blank': !day.date, [day.statusClass]: day.statusClass }">
-            <span v-if="day.date" class="day-number">{{ day.day }}</span>
-            <span v-if="day.status" class="day-status">{{ day.status }}</span>
-          </div>
         </div>
       </div>
     </div>
@@ -231,8 +234,8 @@
       </div>
     </div>
 
-    <!-- Employee History Calendar Modal (For HR) -->
-    <div class="modal fade" id="attHistoryModal" tabindex="-1" ref="historyModal">
+    <!-- Calendar Pop-up Modal (For HR and Employee) -->
+    <div class="modal fade" id="attCalendarModal" tabindex="-1" ref="calendarModal">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header" style="background:#272757;color:white;">
@@ -296,7 +299,6 @@ const getLocalTodayStr = () => {
 };
 const todayStr = getLocalTodayStr();
 
-// Pagination state
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
@@ -312,9 +314,6 @@ const logForm = ref({
 });
 
 const stats = ref({ present: 0, absent: 0, leave: 0, rate: 0 });
-
-// Calendar State
-const calendarDate = ref(new Date());
 const modalCalendarDate = ref(new Date());
 
 const filteredRoster = computed(() => {
@@ -323,20 +322,10 @@ const filteredRoster = computed(() => {
   return employeeList.value.filter(e => e.name.toLowerCase().includes(q) || e.department.toLowerCase().includes(q));
 });
 
-const totalPages = computed(() => Math.ceil(filteredRoster.value.length / itemsPerPage));
-
-const paginatedRoster = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredRoster.value.slice(start, end);
-});
-
 const myHistory = computed(() => {
   if (!state.user) return [];
-  // FIX: Match by email instead of user_id
   const myEmp = employeeList.value.find(e => e.email === state.user.email);
   if (!myEmp) return [];
-  
   return allRecords.value
     .filter(r => r.emp_id === myEmp.emp_id)
     .sort((a, b) => new Date(b.attendance_date) - new Date(a.attendance_date));
@@ -347,6 +336,24 @@ const selectedEmpHistory = computed(() => {
   return allRecords.value
     .filter(r => r.emp_id === selectedEmp.value.emp_id)
     .sort((a, b) => new Date(b.attendance_date) - new Date(a.attendance_date));
+});
+
+// Pagination logic (handles both HR and Employee lists dynamically)
+const totalPages = computed(() => {
+  const list = isHR.value ? filteredRoster.value : myHistory.value;
+  return Math.ceil(list.length / itemsPerPage);
+});
+
+const paginatedRoster = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredRoster.value.slice(start, end);
+});
+
+const paginatedMyHistory = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return myHistory.value.slice(start, end);
 });
 
 const chartData = computed(() => {
@@ -380,7 +387,6 @@ const calculatedHours = computed(() => {
   return diff > 0 ? diff.toFixed(1) : 0;
 });
 
-// Calendar Helpers
 function normalizeDate(dateInput) {
   if (!dateInput) return null;
   if (typeof dateInput === 'string' && dateInput.length === 10) return dateInput;
@@ -393,8 +399,8 @@ function normalizeDate(dateInput) {
 }
 
 function getCalendarDays(targetDate, historyRecords) {
-  const year = targetDate.value.getFullYear();
-  const month = targetDate.value.getMonth();
+  const year = targetDate.getFullYear();
+  const month = targetDate.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   
@@ -415,14 +421,9 @@ function getCalendarDays(targetDate, historyRecords) {
   return days;
 }
 
-const calendarDays = computed(() => getCalendarDays(calendarDate, myHistory));
-const modalCalendarDays = computed(() => getCalendarDays(modalCalendarDate, selectedEmpHistory));
-
-const calendarMonthYear = computed(() => calendarDate.value.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }));
+const modalCalendarDays = computed(() => getCalendarDays(modalCalendarDate.value, selectedEmpHistory));
 const modalCalendarMonthYear = computed(() => modalCalendarDate.value.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }));
 
-function prevMonth() { calendarDate.value = new Date(calendarDate.value.getFullYear(), calendarDate.value.getMonth() - 1, 1); }
-function nextMonth() { calendarDate.value = new Date(calendarDate.value.getFullYear(), calendarDate.value.getMonth() + 1, 1); }
 function prevModalMonth() { modalCalendarDate.value = new Date(modalCalendarDate.value.getFullYear(), modalCalendarDate.value.getMonth() - 1, 1); }
 function nextModalMonth() { modalCalendarDate.value = new Date(modalCalendarDate.value.getFullYear(), modalCalendarDate.value.getMonth() + 1, 1); }
 
@@ -473,11 +474,20 @@ function openLogModal() {
   modal.show();
 }
 
-function viewHistory(emp) {
+function viewCalendar(emp) {
   selectedEmp.value = emp;
-  modalCalendarDate.value = new Date(); // Reset to current month
-  const modal = new Modal(document.getElementById('attHistoryModal'));
+  modalCalendarDate.value = new Date();
+  const modal = new Modal(document.getElementById('attCalendarModal'));
   modal.show();
+}
+
+function viewMyCalendar() {
+  const myEmp = employeeList.value.find(e => e.email === state.user?.email);
+  if (myEmp) {
+    viewCalendar(myEmp);
+  } else {
+    showToast('Could not find your employee record.', 'danger');
+  }
 }
 
 function showToast(message, type) {
@@ -664,8 +674,7 @@ onMounted(() => {
 
 .att-pagination { margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 14px; }
 
-/* Calendar Styles */
-.calendar-nav { display: flex; align-items: center; gap: 15px; }
+/* Calendar Pop-up Styles */
 .current-month { font-weight: 600; font-size: 16px; color: #272757; min-width: 150px; text-align: center; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
 .calendar-weekday { text-align: center; font-weight: 600; color: #5a5a7a; font-size: 12px; padding-bottom: 10px; }
