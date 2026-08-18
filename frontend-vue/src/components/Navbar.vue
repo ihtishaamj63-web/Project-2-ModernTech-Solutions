@@ -19,9 +19,9 @@
         <div class="d-flex align-items-center text-white">
           <div class="me-3 text-end d-none d-md-block">
             <div class="fw-bold">{{ userName }}</div>
-            <small>{{ state.user?.role || 'Employee' }} · ModernTech</small>
+            <small>{{ formattedRole }} · ModernTech</small>
           </div>
-          <button class="btn btn-sm btn-outline-light me-2" @click="toggleNightMode">
+          <button class="btn btn-sm btn-outline-light me-2" @click="toggleNightMode" title="Toggle Dark Mode">
             <i class="bi" :class="isDarkMode ? 'bi-sun-fill' : 'bi-moon-stars-fill'"></i>
           </button>
           <button class="btn btn-sm btn-outline-light" @click="handleLogout">Logout</button>
@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '../stores/auth';
 import { useRouter } from 'vue-router';
 
@@ -52,6 +52,15 @@ function toggleNightMode() {
   isDarkMode.value = document.body.classList.contains('dark-mode');
   localStorage.setItem('nightMode', isDarkMode.value ? 'enabled' : 'disabled');
 }
+
+// FIX: Format database role (hr_staff -> HR Staff)
+const formattedRole = computed(() => {
+  if (!state.user?.role) return 'Employee';
+  return state.user.role
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+});
 
 function handleLogout() {
   logout();

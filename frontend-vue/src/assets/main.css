@@ -1,79 +1,63 @@
 /* src/assets/main.css */
-:root {
-  --primary: #272757;
-  --primary-light: #505081;
-  --primary-dark: #0f0e47;
-  --secondary: #8686ac;
-  --white: #ffffff;
-  --bg-light: #f0f2f7;
-  --border-color: #d8dce6;
-  --text-dark: #1a1a2e;
-  --text-muted: #5a5a7a;
-  --green: #43a047;
-  --green-dark: #1b5e20;
-  --orange: #fb8c00;
-  --red: #e53935;
-  --blue: #1a73e8;
+
+/* Light Mode Defaults */
+body {
+  background-color: #f0f2f7;
+  color: #1a1a2e;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Dark Mode Overrides */
 body.dark-mode {
-  --bg-light: #13132a;
-  --border-color: #2a2a48;
-  --text-dark: #e8e8f2;
-  --text-muted: #8a8aaa;
-  background: #0e0e1a;
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
 }
 
-body.dark-mode .dash-stat-card,
-body.dark-mode .dash-chart-card,
+body.dark-mode .card,
 body.dark-mode .att-card,
-body.dark-mode .to-card,
 body.dark-mode .pay-card,
-body.dark-mode .pay-stat-card,
-body.dark-mode .rev-card,
-body.dark-mode .emp-card-wrap {
-  background: #161630 !important;
-  border: 1px solid #2a2a48 !important;
-  color: #e8e8f2 !important;
+body.dark-mode .emp-card-wrap,
+body.dark-mode .to-card,
+body.dark-mode .dash-stat-card,
+body.dark-mode .att-summary-card {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+  border-color: #333 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
 }
 
-body.dark-mode .navbar {
-  background: #0f0e47 !important;
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+  background-color: #2c2c2c !important;
+  color: #fff !important;
+  border-color: #444 !important;
 }
 
-body.dark-mode .dash-hero {
-  background: linear-gradient(135deg, #0a5a52, #0d3d3a);
+body.dark-mode .table {
+  color: #e0e0e0 !important;
+  border-color: #333 !important;
 }
 
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+body.dark-mode .table thead th {
+  background-color: #2c2c2c !important;
+  color: #fff !important;
+  border-color: #444 !important;
 }
-.toast-custom {
-  background: #272757;
-  color: white;
-  padding: 14px 22px;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.3s ease;
-  margin-bottom: 4px;
+
+body.dark-mode .table tbody td {
+  border-color: #333 !important;
 }
-.toast-custom.success {
-  background: #1b5e20;
+
+body.dark-mode .text-muted {
+  color: #999 !important;
 }
-.toast-custom.danger {
-  background: #b71c1c;
+
+body.dark-mode .modal-content {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
 }
-.toast-custom.show {
-  opacity: 1;
-  transform: translateY(0);
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+  border-color: #333 !important;
 }
