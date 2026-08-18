@@ -173,10 +173,10 @@ const employeeList = computed(() => {
   }));
 });
 
-const filteredRequests = computed(() => {
+// FIX 1: Filter requests by employee FIRST (so employees don't see HR's global counts)
+const userSpecificRequests = computed(() => {
   let filtered = requests.value;
   
-  // FIX: If user is not HR, only show THEIR requests
   if (!isHR.value) {
     const myEmail = state.user?.email;
     const myEmp = employees.value.find(e => e.email === myEmail);
@@ -186,6 +186,12 @@ const filteredRequests = computed(() => {
       filtered = []; // Hide everything if we can't find their employee record
     }
   }
+  return filtered;
+});
+
+// FIX 2: Apply the Tab Status filter (All, Pending, Approved, Denied) on top of the user list
+const filteredRequests = computed(() => {
+  let filtered = userSpecificRequests.value;
 
   if (currentFilter.value !== 'all') {
     filtered = filtered.filter(r => r.status.toLowerCase() === currentFilter.value);
@@ -201,9 +207,10 @@ const paginatedRequests = computed(() => {
   return filteredRequests.value.slice(start, end);
 });
 
+// FIX 3: Base the tab counts on the userSpecificRequests, NOT the filteredRequests!
 function getCount(status) {
-  if (status === 'all') return filteredRequests.value.length;
-  return filteredRequests.value.filter(r => r.status.toLowerCase() === status).length;
+  if (status === 'all') return userSpecificRequests.value.length;
+  return userSpecificRequests.value.filter(r => r.status.toLowerCase() === status).length;
 }
 
 function getDepartmentColor(dept) {
