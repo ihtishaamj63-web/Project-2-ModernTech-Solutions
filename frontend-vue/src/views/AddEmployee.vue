@@ -10,21 +10,9 @@
 
       <div class="emp-card-wrap">
         <form class="emp-form-grid" @submit.prevent="saveEmployee">
+          <!-- 1. Department -->
           <div class="emp-form-group">
-            <label>Full Name <span class="required">*</span></label>
-            <input type="text" v-model="form.name" required placeholder="e.g. Bongiwe Dube" />
-          </div>
-
-          <div class="emp-form-group">
-            <label>Position <span class="required">*</span></label>
-            <select v-model="form.position" required>
-              <option value="">Select Position</option>
-              <option v-for="pos in availablePositions" :key="pos" :value="pos">{{ pos }}</option>
-            </select>
-          </div>
-
-          <div class="emp-form-group">
-            <label>Department <span class="required">*</span></label>
+            <label>1. Department <span class="required">*</span></label>
             <select v-model="form.department" required @change="updatePositions">
               <option value="">Select Department</option>
               <option>Development</option>
@@ -39,16 +27,33 @@
             </select>
           </div>
 
+          <!-- 2. Position (Disabled until Department is chosen) -->
           <div class="emp-form-group">
-            <label>Monthly Salary (R) <span class="required">*</span></label>
-            <input type="number" v-model="form.salary" required min="5000" max="500000" step="1000" placeholder="e.g. 45,000" />
+            <label>2. Position <span class="required">*</span></label>
+            <select v-model="form.position" required :disabled="!form.department" :class="{ 'disabled-select': !form.department }">
+              <option value="">Select Position</option>
+              <option v-for="pos in availablePositions" :key="pos" :value="pos">{{ pos }}</option>
+            </select>
+            <small v-if="!form.department" class="help-text">Select a department first.</small>
+          </div>
+
+          <!-- 3. Salary (Disabled until Position is chosen) -->
+          <div class="emp-form-group">
+            <label>3. Monthly Salary (R) <span class="required">*</span></label>
+            <input type="number" v-model="form.salary" required min="5000" max="500000" step="1000" placeholder="e.g. 45000" :disabled="!form.position" :class="{ 'disabled-select': !form.position }" />
             <small class="help-text">Select a salary range below, or type directly. Increments of R1,000.</small>
-            <select v-model="selectedSalaryTier" class="salary-range" @change="applySalaryTier">
+            <select v-model="selectedSalaryTier" class="salary-range" @change="applySalaryTier" :disabled="!form.position" :class="{ 'disabled-select': !form.position }">
               <option value="">Select salary range...</option>
               <option v-for="tier in salaryTiers" :key="tier.id" :value="tier">
                 {{ tier.label }}
               </option>
             </select>
+          </div>
+
+          <!-- 4. Contact Details -->
+          <div class="emp-form-group">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" v-model="form.name" required placeholder="e.g. Bongiwe Dube" />
           </div>
 
           <div class="emp-form-group">
@@ -124,26 +129,47 @@ const positionMap = {
   Support: ['Customer Support Representative', 'Technical Support Engineer', 'Customer Success Manager', 'Support Lead'],
 };
 
-const salaryTiers = [
-  { id: 'entry', label: 'Entry Level (R40,000 - R55,000)', min: 40000, max: 55000 },
-  { id: 'mid', label: 'Mid Level (R55,000 - R75,000)', min: 55000, max: 75000 },
-  { id: 'senior', label: 'Senior Level (R75,000 - R100,000)', min: 75000, max: 100000 },
-  { id: 'lead', label: 'Lead/Manager (R100,000 - R150,000)', min: 100000, max: 150000 },
-];
+// FIX: Generate dynamic salary tiers based on department, fallback to generic
+const salaryTiers = computed(() => {
+  const deptTiers = {
+    Development: [
+      { id: 'junior', label: 'Junior Developer (R50,000 - R65,000)', min: 50000, max: 65000 },
+      { id: 'mid', label: 'Mid Developer (R65,000 - R80,000)', min: 65000, max: 80000 },
+      { id: 'senior', label: 'Senior Developer (R70,000 - R100,000)', min: 70000, max: 100000 },
+      { id: 'lead', label: 'Lead/Architect (R100,000 - R150,000)', min: 100000, max: 150000 },
+    ],
+    HR: [
+      { id: 'entry', label: 'Entry Level (R40,000 - R55,000)', min: 40000, max: 55000 },
+      { id: 'mid', label: 'Mid Level (R55,000 - R75,000)', min: 55000, max: 75000 },
+      { id: 'senior', label: 'Manager (R75,000 - R100,000)', min: 75000, max: 100000 },
+    ],
+  };
+  
+  return deptTiers[form.value.department] || [
+    { id: 'entry', label: 'Entry Level (R40,000 - R55,000)', min: 40000, max: 55000 },
+    { id: 'mid', label: 'Mid Level (R55,000 - R75,000)', min: 55000, max: 75000 },
+    { id: 'senior', label: 'Senior Level (R75,000 - R100,000)', min: 75000, max: 100000 },
+    { id: 'lead', label: 'Lead/Manager (R100,000 - R150,000)', min: 100000, max: 150000 },
+  ];
+});
 
 const availablePositions = ref([]);
 
 function updatePositions() {
   const dept = form.value.department;
   availablePositions.value = positionMap[dept] || [];
+  // FIX: Reset position and salary if department changes
   form.value.position = '';
+  form.value.salary = '';
   selectedSalaryTier.value = null;
 }
 
 function applySalaryTier() {
   if (selectedSalaryTier.value) {
     const tier = selectedSalaryTier.value;
-    form.value.salary = Math.round((tier.min + tier.max) / 2);
+    const midPoint = (Number(tier.min) + Number(tier.max)) / 2;
+    // FIX: Round to the nearest 1000 so the step="1000" validation doesn't reject it
+    form.value.salary = Math.round(midPoint / 1000) * 1000;
   }
 }
 
@@ -151,16 +177,30 @@ async function loadEmployee(id) {
   try {
     const response = await api.get(`/employees/${id}`);
     const emp = response.data.data;
+    
+    // Fetch payroll to get salary
+    let salary = '';
+    try {
+      const payRes = await api.get('/payroll');
+      const payRecord = payRes.data.data.find(p => p.emp_id === emp.emp_id);
+      if (payRecord) salary = payRecord.base_salary;
+    } catch (e) {
+      console.error('Could not load payroll for employee');
+    }
+
     form.value = {
       name: `${emp.first_name} ${emp.last_name}`,
       position: emp.position,
       department: emp.department,
-      salary: emp.salary || '',
+      salary: salary,
       email: emp.email,
-      startDate: emp.hire_date || '',
+      startDate: emp.hire_date ? emp.hire_date.split('T')[0] : '',
       history: emp.employment_history || '',
     };
-    updatePositions();
+    
+    // Manually trigger position update without resetting the value
+    availablePositions.value = positionMap[form.value.department] || [];
+    
     employeeId.value = id;
     isEdit.value = true;
   } catch (error) {
@@ -228,15 +268,42 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.required { color: #e53935; }
-.help-text { color: #5a5a7a; font-size: 11px; margin-top: 2px; }
-.salary-range { margin-top: 6px; width: 100%; padding: 12px 14px; border: 1.5px solid #d8dce6; border-radius: 10px; font-size: 0.95rem; font-family: inherit; cursor: pointer; background: white; }
+.emp-page { padding: 32px 0 64px; }
+.emp-page__header { margin-bottom: 24px; }
+.emp-page__date { font-size: 0.75rem; letter-spacing: 0.8px; color: #5a5a7a; margin-bottom: 10px; text-transform: uppercase; font-weight: 600; }
+.emp-page__title { font-size: 2.1rem; font-weight: 800; }
+.text-muted { color: #5a5a7a; font-size: 14px; margin-top: 4px; }
+
+.emp-card-wrap { background: white; border: 1px solid #d8dce6; border-radius: 8px; padding: 24px; box-shadow: 0 4px 16px rgba(15,14,71,0.06); overflow: hidden; max-width: 800px; margin: 0 auto; }
 .emp-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .emp-form-group { display: flex; flex-direction: column; gap: 8px; }
 .emp-form-group--full { grid-column: 1 / -1; }
 .emp-form-group label { font-size: 0.9rem; font-weight: 600; color: #505081; }
 .emp-form-group input, .emp-form-group select, .emp-form-group textarea { padding: 12px 14px; border: 1.5px solid #d8dce6; border-radius: 10px; font-size: 0.95rem; font-family: inherit; background: white; transition: 0.2s; }
 .emp-form-group input:focus, .emp-form-group select:focus, .emp-form-group textarea:focus { outline: none; border-color: #272757; box-shadow: 0 0 0 3px rgba(39,39,87,0.1); }
+
+/* FIX: Styles for disabled state to enforce sequence */
+.disabled-select {
+  background-color: #f0f2f7 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
+.required { color: #e53935; }
+.help-text { color: #5a5a7a; font-size: 11px; margin-top: 2px; }
+.salary-range { margin-top: 6px; width: 100%; padding: 12px 14px; border: 1.5px solid #d8dce6; border-radius: 10px; font-size: 0.95rem; font-family: inherit; cursor: pointer; background: white; }
+
 .emp-form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
-@media (max-width: 768px) { .emp-form-grid { grid-template-columns: 1fr; } .emp-form-actions { flex-direction: column; } .emp-form-actions .emp-btn { width: 100%; justify-content: center; } }
+.emp-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-size: 0.93rem; height: 46px; text-decoration: none; transition: 0.2s; }
+.emp-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,14,71,0.15); }
+.emp-btn--primary { background: #272757; color: #fff; }
+.emp-btn--primary:hover { background: #505081; }
+.emp-btn--ghost { background: white; border-color: #d8dce6; color: #1a1a2e; }
+.emp-btn--ghost:hover { border-color: #505081; background: #f8f7ff; }
+
+@media (max-width: 768px) { 
+  .emp-form-grid { grid-template-columns: 1fr; } 
+  .emp-form-actions { flex-direction: column; } 
+  .emp-form-actions .emp-btn { width: 100%; justify-content: center; } 
+}
 </style>

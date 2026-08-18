@@ -36,7 +36,7 @@ body.dark-mode .dash-hero {
   box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
 }
 
-/* Force all text to white */
+/* Fix text colors */
 body.dark-mode h1, 
 body.dark-mode h2, 
 body.dark-mode h3, 
@@ -49,7 +49,9 @@ body.dark-mode .emp-page__title,
 body.dark-mode .to-page-title,
 body.dark-mode .pay-emp-name,
 body.dark-mode .att-employee-name,
-body.dark-mode .emp-row__name span {
+body.dark-mode .emp-row__name span,
+body.dark-mode .pay-stat-value,
+body.dark-mode .att-summary-number {
   color: #ffffff !important;
 }
 
@@ -57,37 +59,63 @@ body.dark-mode .text-muted,
 body.dark-mode .emp-row__muted, 
 body.dark-mode .pay-emp-id, 
 body.dark-mode .pay-stat-label,
+body.dark-mode .pay-stat-sub,
 body.dark-mode .att-summary-label,
-body.dark-mode .to-detail-label {
+body.dark-mode .to-detail-label,
+body.dark-mode .pay-table-footer,
+body.dark-mode .pay-card-sub {
   color: #9ba2b5 !important;
 }
 
+/* Fix links (Email contacts) */
+body.dark-mode a:not(.btn):not(.nav-link):not(.navbar-brand) {
+  color: #5e72e4 !important;
+}
+
 /* Tables */
-body.dark-mode .table {
+body.dark-mode .table,
+body.dark-mode .pay-table,
+body.dark-mode .att-table {
   color: #cfd3dc !important;
   border-color: #444 !important;
 }
-body.dark-mode .table thead th {
+body.dark-mode .table thead th,
+body.dark-mode .pay-table thead th,
+body.dark-mode .att-table thead th {
   background-color: #1e1e2f !important;
   color: #fff !important;
   border-color: #444 !important;
 }
-body.dark-mode .table tbody td {
+body.dark-mode .table tbody td,
+body.dark-mode .pay-table tbody td,
+body.dark-mode .att-table tbody td {
   border-color: #444 !important;
+  background-color: #27293d !important;
 }
-body.dark-mode .table-hover tbody tr:hover {
+
+/* Hover states */
+body.dark-mode .table-hover tbody tr:hover td,
+body.dark-mode .pay-table tbody tr:hover td,
+body.dark-mode .att-table tbody tr:hover td {
   background-color: #2c2c44 !important;
 }
 
-/* Inputs */
+/* Inputs & Search Bars */
 body.dark-mode .form-control,
 body.dark-mode .form-select,
 body.dark-mode .emp-search-bar,
 body.dark-mode .pay-search-box input,
-body.dark-mode .att-search-box input {
+body.dark-mode .att-search-box input,
+body.dark-mode .rev-search input {
   background-color: #1e1e2f !important;
   color: #fff !important;
   border-color: #555 !important;
+}
+body.dark-mode .emp-search-bar input,
+body.dark-mode .pay-search-box input,
+body.dark-mode .att-search-box input,
+body.dark-mode .rev-search input {
+  background-color: transparent !important;
 }
 body.dark-mode .form-control::placeholder {
   color: #888 !important;
@@ -102,4 +130,90 @@ body.dark-mode .modal-content {
 body.dark-mode .modal-header,
 body.dark-mode .modal-footer {
   border-color: #444 !important;
+  background-color: #27293d !important;
+}
+
+/* ==========================================
+   TIME OFF PAGE - DARK MODE FIXES
+   ========================================== */
+
+body.dark-mode .to-filter-tab {
+  color: #9ba2b5 !important;
+  background: transparent !important;
+  border-color: #444 !important;
+}
+body.dark-mode .to-filter-tab:hover {
+  color: #fff !important;
+  background: #2c2c44 !important;
+}
+body.dark-mode .to-filter-tab.active {
+  color: #fff !important;
+  background: #2c2c44 !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode .to-tab-count {
+  background: #444 !important;
+  color: #fff !important;
+}
+body.dark-mode .to-tab-count.to-pending-count {
+  background: #4e342e !important;
+  color: #ffcc80 !important;
+}
+body.dark-mode .to-tab-count.to-approved-count {
+  background: #1b5e20 !important;
+  color: #a5d6a7 !important;
+}
+body.dark-mode .to-tab-count.to-denied-count {
+  background: #b71c1c !important;
+  color: #ef9a9a !important;
+}
+
+body.dark-mode .to-request-card {
+  background: #1e1e2f !important;
+  border-color: #444 !important;
+}
+body.dark-mode .to-request-card.status-pending {
+  background: #2c2c44 !important;
+  border-left-color: #fb8c00 !important;
+}
+body.dark-mode .to-request-card.status-approved {
+  background: #1b2e1f !important;
+  border-left-color: #43a047 !important;
+}
+body.dark-mode .to-request-card.status-denied {
+  background: #2e1f1f !important;
+  border-left-color: #e53935 !important;
+}
+
+body.dark-mode .to-request-reason {
+  background: #27293d !important;
+  color: #cfd3dc !important;
+  border-left-color: #555 !important;
+}
+
+body.dark-mode .to-detail-value {
+  color: #fff !important;
+}
+
+/* Time Off Text & Badge Fixes */
+body.dark-mode .to-request-name {
+  color: #ffffff !important;
+}
+
+body.dark-mode .to-request-position {
+  color: #9ba2b5 !important;
+}
+
+body.dark-mode .to-request-status.pending {
+  background: #4e342e !important;
+  color: #ffcc80 !important;
+}
+body.dark-mode .to-request-status.approved {
+  background: #1b5e20 !important;
+  color: #a5d6a7 !important;
+}
+body.dark-mode .to-request-status.denied {
+  background: #b71c1c !important;
+  color: #ef9a9a !important;
 }

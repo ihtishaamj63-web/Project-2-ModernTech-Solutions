@@ -254,10 +254,36 @@ onMounted(() => {
 .text-muted { color: #5a5a7a; font-size: 14px; margin-top: 4px; }
 
 .emp-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-.emp-search-bar { display: flex; align-items: center; gap: 10px; background: white; border: 1px solid #d8dce6; border-radius: 999px; padding: 0 18px; min-width: 360px; height: 46px; transition: 0.2s; }
-.emp-search-bar:focus-within { border-color: #272757; box-shadow: 0 0 0 3px rgba(39,39,87,0.1); }
-.emp-search-bar i { color: #5a5a7a; }
-.emp-search-bar input { border: none; outline: none; background: transparent; width: 100%; font-size: 0.95rem; color: #1a1a2e; }
+/* In src/views/Employees.vue <style scoped> */
+.emp-search-bar { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  background: white; 
+  border: 1px solid #d8dce6; 
+  border-radius: 999px; 
+  padding: 0 18px; 
+  min-width: 360px; 
+  height: 46px; 
+  transition: 0.2s; 
+}
+.emp-search-bar:focus-within { 
+  border-color: #272757; 
+  box-shadow: 0 0 0 3px rgba(39,39,87,0.1); 
+}
+.emp-search-bar i { 
+  color: #5a5a7a; 
+}
+/* FIX: Give input proper padding and prevent cutoff */
+.emp-search-bar input { 
+  border: none; 
+  outline: none; 
+  background: transparent; 
+  width: 100%; 
+  font-size: 0.95rem; 
+  color: #1a1a2e; 
+  padding: 10px 0; 
+}
 .emp-toolbar__actions { display: flex; gap: 12px; }
 .emp-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; border-radius: 999px; font-weight: 600; cursor: pointer; border: 1px solid transparent; font-size: 0.93rem; height: 46px; text-decoration: none; transition: 0.2s; }
 .emp-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15,14,71,0.15); }

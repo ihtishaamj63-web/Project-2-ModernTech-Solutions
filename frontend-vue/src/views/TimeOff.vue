@@ -140,7 +140,13 @@ const newRequest = ref({
   reason: '',
 });
 
-const leaveTypes = ['Annual', 'Sick Leave', 'Personal', 'Family Responsibility', 'Vacation', 'Bereavement', 'Medical Appointment', 'Childcare'];
+// FIX: Use exact database ENUM values
+const leaveTypes = [
+  { value: 'vacation', label: 'Vacation / Annual' },
+  { value: 'sick_leave', label: 'Sick Leave' },
+  { value: 'personal', label: 'Personal' },
+  { value: 'unpaid_leave', label: 'Unpaid Leave' }
+];
 
 const filterTabs = [
   { key: 'all', label: 'All', icon: 'bi bi-list-ul', countClass: '' },
@@ -172,15 +178,8 @@ function getCount(status) {
 
 function getDepartmentColor(dept) {
   const colors = {
-    Development: '#4CAF50',
-    HR: '#2196F3',
-    QA: '#FF9800',
-    Sales: '#E74C5E',
-    Marketing: '#9C27B0',
-    Design: '#00BCD4',
-    IT: '#607D8B',
-    Finance: '#795548',
-    Support: '#3F51B5'
+    Development: '#4CAF50', HR: '#2196F3', QA: '#FF9800', Sales: '#E74C5E',
+    Marketing: '#9C27B0', Design: '#00BCD4', IT: '#607D8B', Finance: '#795548', Support: '#3F51B5'
   };
   return colors[dept] || '#8686AC';
 }
@@ -190,11 +189,9 @@ function showToast(message, type) {
   else alert(message);
 }
 
-// Replace the loadData function in TimeOff.vue
 async function loadData() {
   loading.value = true;
   try {
-    // Auto-reject old pending requests
     await api.put('/timeoff/cleanup');
 
     const empResponse = await api.get('/employees');
@@ -209,11 +206,18 @@ async function loadData() {
     }
 
     if (reqResponse.data.success) {
+      // FIX: Map the database ENUM value to a nice display label
+      const typeMap = { 
+        vacation: 'Vacation', 
+        sick_leave: 'Sick Leave', 
+        personal: 'Personal', 
+        unpaid_leave: 'Unpaid Leave' 
+      };
+
       requests.value = reqResponse.data.data.map(r => {
         const startDate = new Date(r.start_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' });
         const endDate = new Date(r.end_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
         
-        // Calculate days
         const diffTime = Math.abs(new Date(r.end_date) - new Date(r.start_date));
         const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
@@ -223,7 +227,7 @@ async function loadData() {
           initials: (r.first_name?.[0] || '') + (r.last_name?.[0] || ''),
           color: getDepartmentColor(r.department),
           position: r.position || 'N/A',
-          // FIX: Map start_date and end_date to a formatted string
+          type: typeMap[r.timeoff_type] || r.timeoff_type, // Display nice label
           date: `${startDate} - ${endDate}`,
           days: days,
         };
@@ -239,7 +243,6 @@ async function loadData() {
 
 function openNewRequest() {
   if (!isHR.value) {
-    // FIX: Removed .value from state
     const user = state.user;
     const userEmp = employees.value.find(e => e.email === user?.username || e.email === user?.email);
     if (userEmp) {
@@ -265,7 +268,7 @@ async function submitNewRequest() {
       emp_id: employeeId,
       start_date: startDate,
       end_date: endDate,
-      timeoff_type: type,
+      timeoff_type: type, // Sends exact DB value (e.g., 'sick_leave')
       reason: reason || 'No reason provided',
     });
 

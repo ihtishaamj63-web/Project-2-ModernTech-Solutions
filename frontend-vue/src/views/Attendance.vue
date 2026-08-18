@@ -442,6 +442,14 @@ async function submitAttendance() {
     return;
   }
 
+  // FIX: Prevent logging attendance for weekends
+  const dateObj = new Date(date);
+  const day = dateObj.getDay();
+  if (day === 0 || day === 6) {
+    showToast('Cannot log attendance for weekends', 'danger');
+    return;
+  }
+
   // If Present/Late, ensure times are selected
   if ((status === 'present' || status === 'late' || status === 'half_day') && (!checkIn || !checkOut)) {
     showToast('Please select Check In and Check Out times', 'danger');
