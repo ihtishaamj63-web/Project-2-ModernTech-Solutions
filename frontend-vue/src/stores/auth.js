@@ -1,73 +1,45 @@
-// backend/routes/auth.js
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import pool from '../config/database.js';
-import dotenv from 'dotenv';
+// frontend-vue/src/stores/auth.js
+import { reactive, computed } from 'vue';
+import api from '../api/axios';
 
-dotenv.config();
-
-const router = express.Router();
-
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({
-                success: false,
-                error: 'Username and password required'
-            });
-        }
-        const [users] = await pool.query(
-            'SELECT * FROM users WHERE username = ? AND is_active = TRUE',
-            [username]
-        );
-        if (users.length === 0) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
-        }
-        const user = users[0];
-        const isValid = await bcrypt.compare(password, user.password_hash);
-        if (!isValid) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
-        }
-        const token = jwt.sign(
-            {
-                user_id: user.user_id,
-                username: user.username,
-                email: user.email,
-                role: user.role
-            },
-            process.env.JWT_SECRET || 'modernTechSecretKey2026', // FIX: Added fallback
-            { expiresIn: '24h' }
-        );
-        res.json({
-            success: true,
-            data: {
-                token,
-                user: {
-                    user_id: user.user_id,
-                    username: user.username,
-                    email: user.email,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
-                    role: user.role
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Server error during login'
-        });
-    }
+const state = reactive({
+  user: JSON.parse(localStorage.getItem('authUser') || 'null'),
+  token: localStorage.getItem('token'),
 });
 
-export default router;
+export function useAuth() {
+  function login(username, password) {
+    return api.post('/auth/login', { username, password })
+      .then(response => {
+        if (response.data.success) {
+          state.token = response.data.data.token;
+          state.user = response.data.data.user;
+          localStorage.setItem('token', state.token);
+          localStorage.setItem('authUser', JSON.stringify(state.user));
+          return { success: true };
+        }
+      })
+      .catch(error => {
+        return { success: false, error: error.response?.data?.error || 'Server error' };
+      });
+  }
+
+  function logout() {
+    state.token = null;
+    state.user = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('authUser');
+  }
+
+  // Use computed properties so Vue updates the UI automatically
+  const isHR = computed(() => {
+    const role = state.user?.role;
+    return role === 'hr_staff' || role === 'HR Manager' || role === 'HR Admin';
+  });
+
+  const userName = computed(() => {
+    return state.user?.first_name || 'User';
+  });
+
+  return { state, login, logout, isHR, userName };
+}

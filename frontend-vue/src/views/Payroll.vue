@@ -186,7 +186,6 @@ function closeModalIfOutside(e) {
   if (e.target === e.currentTarget) showModal.value = false;
 }
 
-// FIX: Implemented actual CSV Export
 function exportCSV() {
   if (!isHR.value) {
     showToast('Only HR staff can export payroll data.', 'danger');
@@ -238,7 +237,8 @@ async function loadPayroll() {
       const employees = empResponse.data.data;
       const payrollData = payResponse.data.data;
 
-      const loggedInUserId = state.value.user?.user_id;
+      // FIX: Removed .value from state
+      const loggedInUserId = state.user?.user_id;
       const visibleEmployees = isHR.value ? employees : employees.filter(e => e.user_id === loggedInUserId);
 
       payroll.value = visibleEmployees.map(emp => {

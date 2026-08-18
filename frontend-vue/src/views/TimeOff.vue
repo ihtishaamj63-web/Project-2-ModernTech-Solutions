@@ -150,7 +150,6 @@ const filterTabs = [
 ];
 
 const employeeList = computed(() => {
-  // FIX: Add employeeId alias
   return employees.value.map(emp => ({
     ...emp,
     employeeId: emp.emp_id,
@@ -221,7 +220,8 @@ async function loadData() {
 
 function openNewRequest() {
   if (!isHR.value) {
-    const user = state.value.user;
+    // FIX: Removed .value from state
+    const user = state.user;
     const userEmp = employees.value.find(e => e.email === user?.username || e.email === user?.email);
     if (userEmp) {
       newRequest.value.employeeId = userEmp.emp_id;
@@ -263,7 +263,6 @@ async function submitNewRequest() {
   }
 }
 
-// FIX: Updated all handlers to use timeoff_id directly
 async function handleApprove(timeoffId) {
   try {
     await api.put(`/timeoff/${timeoffId}/approve`);

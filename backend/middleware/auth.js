@@ -1,4 +1,4 @@
-// JWT authentication middleware
+// backend/middleware/auth.js
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
@@ -16,8 +16,8 @@ const authMiddleware = (req, res, next) => {
             });
         }
 
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Verify the token - FIX: Add fallback secret to match the auth route
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'modernTechSecretKey2026');
         req.user = decoded; // Attach user info to request
         next();
     } catch (error) {
