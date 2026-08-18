@@ -1,4 +1,4 @@
-<!-- src/views/Employees.vue -->
+<!-- frontend-vue/src/views/Employees.vue -->
 <template>
   <div class="emp-page">
     <div class="container">
@@ -80,17 +80,17 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Delete Modal -->
-    <div v-if="showDeleteModal" class="emp-modal" @click.self="closeDeleteModal">
-      <div class="emp-modal__backdrop" @click="closeDeleteModal"></div>
-      <div class="emp-modal__content">
-        <h3>Delete Employee</h3>
-        <p>Are you sure you want to remove this employee? This action cannot be undone.</p>
-        <div class="emp-modal__actions">
-          <button class="emp-btn emp-btn--ghost" @click="closeDeleteModal">Cancel</button>
-          <button class="emp-btn emp-btn--danger" @click="deleteEmployee">Delete</button>
+      <!-- Delete Modal -->
+      <div v-if="showDeleteModal" class="emp-modal" @click.self="closeDeleteModal">
+        <div class="emp-modal__backdrop" @click="closeDeleteModal"></div>
+        <div class="emp-modal__content">
+          <h3>Delete Employee</h3>
+          <p>Are you sure you want to remove this employee? This action cannot be undone.</p>
+          <div class="emp-modal__actions">
+            <button class="emp-btn emp-btn--ghost" @click="closeDeleteModal">Cancel</button>
+            <button class="emp-btn emp-btn--danger" @click="deleteEmployee">Delete</button>
+          </div>
         </div>
       </div>
     </div>
@@ -225,8 +225,10 @@ async function loadEmployees() {
     }
 
     if (empResponse.data.success) {
+      // FIX: Map emp_id to employeeId explicitly
       employees.value = empResponse.data.data.map(emp => ({
         ...emp,
+        employeeId: emp.emp_id,
         name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown',
         salary: salaryMap[emp.emp_id] || 0,
       }));

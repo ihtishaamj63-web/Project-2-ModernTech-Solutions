@@ -1,4 +1,4 @@
-<!-- src/views/Payroll.vue -->
+<!-- frontend-vue/src/views/Payroll.vue -->
 <template>
   <div class="pay-container">
     <h1 class="pay-title">Payroll</h1>
@@ -128,7 +128,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuth } from '../stores/auth';
 import api from '../api/axios';
 
-const { isHR } = useAuth();
+const { isHR, state } = useAuth();
 
 const payroll = ref([]);
 const search = ref('');
@@ -186,13 +186,42 @@ function closeModalIfOutside(e) {
   if (e.target === e.currentTarget) showModal.value = false;
 }
 
-async function exportCSV() {
+// FIX: Implemented actual CSV Export
+function exportCSV() {
   if (!isHR.value) {
     showToast('Only HR staff can export payroll data.', 'danger');
     return;
   }
-  // Excel export logic here
-  showToast('Export feature coming soon', 'success');
+
+  try {
+    const headers = ['Employee Name', 'ID', 'Department', 'Position', 'Hours Worked', 'Hourly Rate', 'Gross Pay', 'Deductions', 'Net Pay'];
+    const rows = filteredPayroll.value.map(p => [
+      `"${p.name}"`,
+      `"${p.id}"`,
+      `"${p.department}"`,
+      `"${p.position}"`,
+      p.hoursWorked,
+      p.hourlyRate.toFixed(2),
+      p.gross.toFixed(2),
+      p.deductions.toFixed(2),
+      p.net.toFixed(2)
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const link = document.createElement('a');
+    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+    link.download = `payroll_report_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    showToast('Payroll exported successfully', 'success');
+  } catch (error) {
+    console.error('Export error:', error);
+    showToast('Failed to export payroll', 'danger');
+  }
 }
 
 function showToast(message, type) {
@@ -209,7 +238,8 @@ async function loadPayroll() {
       const employees = empResponse.data.data;
       const payrollData = payResponse.data.data;
 
-      const visibleEmployees = isHR.value ? employees : employees.filter(e => e.emp_id === (JSON.parse(localStorage.getItem('authUser') || '{}')).employeeId);
+      const loggedInUserId = state.value.user?.user_id;
+      const visibleEmployees = isHR.value ? employees : employees.filter(e => e.user_id === loggedInUserId);
 
       payroll.value = visibleEmployees.map(emp => {
         const existing = payrollData.find(p => p.emp_id === emp.emp_id);

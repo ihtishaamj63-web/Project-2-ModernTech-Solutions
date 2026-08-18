@@ -1,4 +1,4 @@
-<!-- frontend-vue/src/App.vue -->
+<!-- src/App.vue -->
 <script setup>
 import Navbar from './components/Navbar.vue';
 import { useRoute } from 'vue-router';
@@ -7,7 +7,6 @@ const route = useRoute();
 </script>
 
 <template>
-  <!-- Hide Navbar on the Login page -->
   <div class="app-wrapper">
     <Navbar v-if="route.name !== 'Login'" />
     <main class="app-main">

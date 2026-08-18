@@ -481,12 +481,45 @@ async function submitAttendance() {
   }
 }
 
-async function exportAttendance() {
+// FIX: Implemented actual CSV Export for Attendance
+function exportAttendance() {
   if (!isHR.value) {
     showToast('Only HR staff can export attendance data.', 'danger');
     return;
   }
-  showToast('Export feature coming soon', 'success');
+
+  try {
+    const headers = ['Employee Name', 'Department', 'Position', 'Total Present', 'Total Absent', 'Total On Leave'];
+    const rows = employeeList.value.map(emp => {
+      const present = emp.attendance.filter(a => a.status === 'present').length;
+      const absent = emp.attendance.filter(a => a.status === 'absent').length;
+      const leave = emp.attendance.filter(a => a.status === 'on_leave').length;
+      
+      return [
+        `"${emp.name}"`,
+        `"${emp.department}"`,
+        `"${emp.position}"`,
+        present,
+        absent,
+        leave
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const link = document.createElement('a');
+    link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+    link.download = `attendance_report_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+
+    showToast('Attendance exported successfully', 'success');
+  } catch (error) {
+    console.error('Export error:', error);
+    showToast('Failed to export attendance', 'danger');
+  }
 }
 
 async function loadData() {
@@ -501,7 +534,7 @@ async function loadData() {
         name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown',
         first_name: emp.first_name || '',
         last_name: emp.last_name || '',
-        department: emp.department || 'N/A',
+        department: emp.department || 'Unknown',
         position: emp.position || 'N/A',
         initials: (emp.first_name?.[0] || '') + (emp.last_name?.[0] || ''),
         color: getDepartmentColor(emp.department),
@@ -529,8 +562,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* FIX: Updated header classes to prevent button overlap */
 .att-main-content { padding: 28px 36px 40px; }
 .att-page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+.att-header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .att-page-title { font-size: 24px; font-weight: 700; color: #272757; margin: 0; }
 .att-page-subtitle { font-size: 14px; color: #5a5a7a; margin: 2px 0 0; }
 .att-card { border: none; border-radius: 12px; background: white; box-shadow: 0 2px 8px rgba(39,39,87,0.08); }

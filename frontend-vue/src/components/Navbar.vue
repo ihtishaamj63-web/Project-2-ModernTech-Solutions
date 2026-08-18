@@ -8,31 +8,23 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mx-auto">
-          <li class="nav-item">
-            <router-link class="nav-link" to="/">Dashboard</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link class="nav-link" to="/employees">Employees</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link class="nav-link" to="/payroll">Payroll</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link class="nav-link" to="/attendance">Attendance</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link class="nav-link" to="/timeoff">Time Off</router-link>
-          </li>
-          <li class="nav-item">
-            <router-link class="nav-link" to="/reviews">Reviews</router-link>
-          </li>
+          <li class="nav-item"><router-link class="nav-link" to="/">Dashboard</router-link></li>
+          <li class="nav-item"><router-link class="nav-link" to="/employees">Employees</router-link></li>
+          <li class="nav-item"><router-link class="nav-link" to="/payroll">Payroll</router-link></li>
+          <li class="nav-item"><router-link class="nav-link" to="/attendance">Attendance</router-link></li>
+          <li class="nav-item"><router-link class="nav-link" to="/timeoff">Time Off</router-link></li>
+          <li class="nav-item"><router-link class="nav-link" to="/reviews">Reviews</router-link></li>
         </ul>
+        
         <div class="d-flex align-items-center text-white">
-          <div class="me-3 text-end">
-            <div class="fw-bold">{{ state.user?.first_name || 'User' }}</div>
+          <div class="me-3 text-end d-none d-md-block">
+            <div class="fw-bold">{{ userName }}</div>
             <small>{{ state.user?.role || 'Employee' }} · ModernTech</small>
           </div>
-          <button class="btn btn-outline-light btn-sm" @click="handleLogout">Logout</button>
+          <button class="btn btn-sm btn-outline-light me-2" @click="toggleNightMode">
+            <i class="bi" :class="isDarkMode ? 'bi-sun-fill' : 'bi-moon-stars-fill'"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-light" @click="handleLogout">Logout</button>
         </div>
       </div>
     </div>
@@ -40,16 +32,31 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
 import { useAuth } from '../stores/auth';
 import { useRouter } from 'vue-router';
 
-const { state, logout } = useAuth();
+const { state, logout, userName } = useAuth();
 const router = useRouter();
+const isDarkMode = ref(false);
 
-const handleLogout = () => {
+onMounted(() => {
+  if (localStorage.getItem('nightMode') === 'enabled') {
+    document.body.classList.add('dark-mode');
+    isDarkMode.value = true;
+  }
+});
+
+function toggleNightMode() {
+  document.body.classList.toggle('dark-mode');
+  isDarkMode.value = document.body.classList.contains('dark-mode');
+  localStorage.setItem('nightMode', isDarkMode.value ? 'enabled' : 'disabled');
+}
+
+function handleLogout() {
   logout();
   router.push('/login');
-};
+}
 </script>
 
 <style scoped>
@@ -61,6 +68,7 @@ const handleLogout = () => {
 .navbar-nav .nav-link {
   color: rgba(255, 255, 255, 0.8);
   margin: 0 5px;
+  transition: color 0.2s;
 }
 .navbar-nav .nav-link:hover {
   color: #fff;

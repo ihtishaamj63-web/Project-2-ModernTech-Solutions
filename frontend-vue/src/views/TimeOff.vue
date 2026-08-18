@@ -1,4 +1,4 @@
-<!-- src/views/TimeOff.vue -->
+<!-- frontend-vue/src/views/TimeOff.vue -->
 <template>
   <div class="to-main-content">
     <div class="to-page-header">
@@ -56,12 +56,12 @@
               </div>
               <div class="to-request-reason">"{{ req.reason }}"</div>
               <div class="to-request-actions" v-if="req.status === 'pending'">
-                <button v-if="isHR" class="to-btn-approve" @click="handleApprove(req.employeeId, req.date)"><i class="bi bi-check-lg me-1"></i>Approve</button>
-                <button v-if="isHR" class="to-btn-deny" @click="handleDeny(req.employeeId, req.date)"><i class="bi bi-x-lg me-1"></i>Deny</button>
-                <button class="to-btn-cancel" @click="handleCancel(req.employeeId, req.date)"><i class="bi bi-trash me-1"></i>Cancel</button>
+                <button v-if="isHR" class="to-btn-approve" @click="handleApprove(req.timeoff_id)"><i class="bi bi-check-lg me-1"></i>Approve</button>
+                <button v-if="isHR" class="to-btn-deny" @click="handleDeny(req.timeoff_id)"><i class="bi bi-x-lg me-1"></i>Deny</button>
+                <button class="to-btn-cancel" @click="handleCancel(req.timeoff_id)"><i class="bi bi-trash me-1"></i>Cancel</button>
               </div>
               <div class="to-request-actions" v-else-if="isHR">
-                <button class="to-btn-reverse" @click="handleReverse(req.employeeId, req.date)"><i class="bi bi-arrow-counterclockwise me-1"></i>Reverse</button>
+                <button class="to-btn-reverse" @click="handleReverse(req.timeoff_id)"><i class="bi bi-arrow-counterclockwise me-1"></i>Reverse</button>
               </div>
             </div>
           </div>
@@ -150,8 +150,10 @@ const filterTabs = [
 ];
 
 const employeeList = computed(() => {
+  // FIX: Add employeeId alias
   return employees.value.map(emp => ({
     ...emp,
+    employeeId: emp.emp_id,
     name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || 'Unknown',
   }));
 });
@@ -218,12 +220,9 @@ async function loadData() {
 }
 
 function openNewRequest() {
-  if (isHR.value) {
-    // HR can select any employee
-  } else {
-    // Employees can only request for themselves
-    const user = state.user;
-    const userEmp = employees.value.find(e => e.email === user?.username);
+  if (!isHR.value) {
+    const user = state.value.user;
+    const userEmp = employees.value.find(e => e.email === user?.username || e.email === user?.email);
     if (userEmp) {
       newRequest.value.employeeId = userEmp.emp_id;
     }
@@ -264,11 +263,10 @@ async function submitNewRequest() {
   }
 }
 
-async function handleApprove(employeeId, date) {
-  const req = requests.value.find(r => r.emp_id === employeeId && r.date === date && r.status === 'pending');
-  if (!req) return;
+// FIX: Updated all handlers to use timeoff_id directly
+async function handleApprove(timeoffId) {
   try {
-    await api.put(`/timeoff/${req.timeoff_id}/approve`);
+    await api.put(`/timeoff/${timeoffId}/approve`);
     showToast('Request approved', 'success');
     await loadData();
   } catch (error) {
@@ -276,11 +274,9 @@ async function handleApprove(employeeId, date) {
   }
 }
 
-async function handleDeny(employeeId, date) {
-  const req = requests.value.find(r => r.emp_id === employeeId && r.date === date && r.status === 'pending');
-  if (!req) return;
+async function handleDeny(timeoffId) {
   try {
-    await api.put(`/timeoff/${req.timeoff_id}/deny`, { denial_reason: 'Denied by HR' });
+    await api.put(`/timeoff/${timeoffId}/deny`, { denial_reason: 'Denied by HR' });
     showToast('Request denied', 'danger');
     await loadData();
   } catch (error) {
@@ -288,20 +284,25 @@ async function handleDeny(employeeId, date) {
   }
 }
 
-async function handleCancel(employeeId, date) {
-  const req = requests.value.find(r => r.emp_id === employeeId && r.date === date && r.status === 'pending');
-  if (!req) return;
+async function handleCancel(timeoffId) {
   if (confirm('Cancel this leave request? This will permanently delete it.')) {
-    // Note: You'd need a DELETE endpoint for this
-    showToast('Cancel feature coming soon', 'info');
+    try {
+      await api.put(`/timeoff/${timeoffId}/cancel`);
+      showToast('Request cancelled', 'success');
+      await loadData();
+    } catch (error) {
+      showToast('Failed to cancel', 'danger');
+    }
   }
 }
 
-function handleReverse(employeeId, date) {
-  const req = requests.value.find(r => r.emp_id === employeeId && r.date === date);
-  if (req) {
-    // Note: You'd need a reverse endpoint for this
-    showToast('Reverse feature coming soon', 'info');
+async function handleReverse(timeoffId) {
+  try {
+    await api.put(`/timeoff/${timeoffId}/reverse`);
+    showToast('Request reversed to pending', 'success');
+    await loadData();
+  } catch (error) {
+    showToast('Failed to reverse', 'danger');
   }
 }
 
