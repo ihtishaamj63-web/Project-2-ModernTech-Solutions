@@ -28,12 +28,12 @@
           <div v-if="loading" class="text-center py-4">
             <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
           </div>
-          <div v-else-if="filteredRequests.length === 0" class="to-empty-state">
+          <div v-else-if="paginatedRequests.length === 0" class="to-empty-state">
             <i class="bi bi-inbox"></i>
             <p class="text-muted">{{ isHR ? 'No requests found.' : 'You have no time off requests.' }}</p>
           </div>
           <div v-else>
-            <div v-for="req in filteredRequests" :key="req.timeoff_id" class="to-request-card" :class="'status-' + req.status.toLowerCase()">
+            <div v-for="req in paginatedRequests" :key="req.timeoff_id" class="to-request-card" :class="'status-' + req.status.toLowerCase()">
               <div class="to-request-header">
                 <div class="to-request-employee">
                   <div class="to-request-avatar" :style="{ background: req.color }">{{ req.initials }}</div>
@@ -65,6 +65,13 @@
               </div>
             </div>
           </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="to-pagination" v-if="filteredRequests.length > itemsPerPage">
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="currentPage--">Prev</button>
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
         </div>
       </div>
     </div>
@@ -132,6 +139,10 @@ const currentFilter = ref('all');
 const todayStr = new Date().toISOString().split('T')[0];
 const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = 8;
+
 const newRequest = ref({
   employeeId: '',
   type: '',
@@ -164,15 +175,35 @@ const employeeList = computed(() => {
 
 const filteredRequests = computed(() => {
   let filtered = requests.value;
+  
+  // FIX: If user is not HR, only show THEIR requests
+  if (!isHR.value) {
+    const myEmail = state.user?.email;
+    const myEmp = employees.value.find(e => e.email === myEmail);
+    if (myEmp) {
+      filtered = filtered.filter(r => r.emp_id === myEmp.emp_id);
+    } else {
+      filtered = []; // Hide everything if we can't find their employee record
+    }
+  }
+
   if (currentFilter.value !== 'all') {
     filtered = filtered.filter(r => r.status.toLowerCase() === currentFilter.value);
   }
   return filtered;
 });
 
+const totalPages = computed(() => Math.ceil(filteredRequests.value.length / itemsPerPage));
+
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredRequests.value.slice(start, end);
+});
+
 function getCount(status) {
-  if (status === 'all') return requests.value.length;
-  return requests.value.filter(r => r.status.toLowerCase() === status).length;
+  if (status === 'all') return filteredRequests.value.length;
+  return filteredRequests.value.filter(r => r.status.toLowerCase() === status).length;
 }
 
 function getDepartmentColor(dept) {
@@ -202,10 +233,7 @@ async function loadData() {
 
     if (reqResponse.data.success) {
       const typeMap = { 
-        vacation: 'Vacation', 
-        sick_leave: 'Sick Leave', 
-        personal: 'Personal', 
-        unpaid_leave: 'Unpaid Leave' 
+        vacation: 'Vacation', sick_leave: 'Sick Leave', personal: 'Personal', unpaid_leave: 'Unpaid Leave' 
       };
 
       requests.value = reqResponse.data.data.map(r => {
@@ -259,11 +287,7 @@ async function submitNewRequest() {
 
   try {
     const response = await api.post('/timeoff', {
-      emp_id: employeeId,
-      start_date: startDate,
-      end_date: endDate,
-      timeoff_type: type,
-      reason: reason || 'No reason provided',
+      emp_id: employeeId, start_date: startDate, end_date: endDate, timeoff_type: type, reason: reason || 'No reason provided',
     });
 
     if (response.data.success) {
@@ -357,15 +381,7 @@ onMounted(() => {
 .to-request-name { font-weight: 600; font-size: 14px; color: #1a1a2e; }
 .to-request-position { font-size: 12px; color: #5a5a7a; }
 
-/* FIX: Professional Status Badges */
-.to-request-status { 
-  padding: 4px 12px; 
-  border-radius: 4px; 
-  font-size: 12px; 
-  font-weight: 600; 
-  text-transform: capitalize; 
-  border: 1px solid transparent;
-}
+.to-request-status { padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: capitalize; border: 1px solid transparent; }
 .to-request-status.pending { background: #fff3e0; color: #bf360c; border-color: #ffb74d; }
 .to-request-status.approved { background: #e8f5e9; color: #1b5e20; border-color: #66bb6a; }
 .to-request-status.denied { background: #ffebee; color: #b71c1c; border-color: #e57373; }
@@ -386,4 +402,6 @@ onMounted(() => {
 .to-empty-state { text-align: center; padding: 40px 16px; }
 .to-empty-state i { font-size: 36px; color: #8686ac; margin-bottom: 12px; display: block; }
 .to-empty-state p { color: #5a5a7a; font-weight: 500; margin: 0; }
+
+.to-pagination { margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 14px; }
 </style>

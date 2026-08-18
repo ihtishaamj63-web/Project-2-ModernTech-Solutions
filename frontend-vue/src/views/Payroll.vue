@@ -61,7 +61,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in filteredPayroll" :key="p.emp_id" @click="openPayslip(p.emp_id)" style="cursor:pointer;">
+            <tr v-for="p in paginatedPayroll" :key="p.emp_id" @click="openPayslip(p.emp_id)" style="cursor:pointer;">
               <td>
                 <div class="pay-slip-emp">
                   <div class="pay-slip-avatar" :style="{ background: p.color }">{{ getInitials(p.name) }}</div>
@@ -78,13 +78,22 @@
               <td>- {{ formatCurrency(p.deductions) }}</td>
               <td class="pay-net-cell">{{ formatCurrency(p.net) }}</td>
             </tr>
-            <tr v-if="filteredPayroll.length === 0">
+            <tr v-if="paginatedPayroll.length === 0">
               <td colspan="6" style="text-align:center;color:#5a5a7a;padding:20px;">No payslips found.</td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div class="pay-table-footer">Showing {{ filteredPayroll.length }} of {{ payroll.length }} payslips</div>
+      
+      <!-- Pagination -->
+      <div class="pay-table-footer">
+        <span>Showing {{ paginatedPayroll.length }} of {{ filteredPayroll.length }} payslips</span>
+        <div class="pagination-controls">
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="currentPage--">Prev</button>
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
+        </div>
+      </div>
     </div>
 
     <!-- Payslip Modal -->
@@ -136,6 +145,10 @@ const showModal = ref(false);
 const selectedPayslip = ref(null);
 const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = 10;
+
 const filteredPayroll = computed(() => {
   if (!search.value) return payroll.value;
   const q = search.value.toLowerCase();
@@ -144,6 +157,14 @@ const filteredPayroll = computed(() => {
     p.department.toLowerCase().includes(q) ||
     p.id.toLowerCase().includes(q)
   );
+});
+
+const totalPages = computed(() => Math.ceil(filteredPayroll.value.length / itemsPerPage));
+
+const paginatedPayroll = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredPayroll.value.slice(start, end);
 });
 
 const totalGross = computed(() => {
@@ -161,15 +182,8 @@ function formatCurrency(value) {
 
 function getDepartmentColor(dept) {
   const colors = {
-    Development: '#4CAF50',
-    HR: '#2196F3',
-    QA: '#FF9800',
-    Sales: '#E74C5E',
-    Marketing: '#9C27B0',
-    Design: '#00BCD4',
-    IT: '#607D8B',
-    Finance: '#795548',
-    Support: '#3F51B5'
+    Development: '#4CAF50', HR: '#2196F3', QA: '#FF9800', Sales: '#E74C5E',
+    Marketing: '#9C27B0', Design: '#00BCD4', IT: '#607D8B', Finance: '#795548', Support: '#3F51B5'
   };
   return colors[dept] || '#8686AC';
 }
@@ -195,27 +209,15 @@ function exportCSV() {
   try {
     const headers = ['Employee Name', 'ID', 'Department', 'Position', 'Hours Worked', 'Hourly Rate', 'Gross Pay', 'Deductions', 'Net Pay'];
     const rows = filteredPayroll.value.map(p => [
-      `"${p.name}"`,
-      `"${p.id}"`,
-      `"${p.department}"`,
-      `"${p.position}"`,
-      p.hoursWorked,
-      p.hourlyRate.toFixed(2),
-      p.gross.toFixed(2),
-      p.deductions.toFixed(2),
-      p.net.toFixed(2)
+      `"${p.name}"`, `"${p.id}"`, `"${p.department}"`, `"${p.position}"`,
+      p.hoursWorked, p.hourlyRate.toFixed(2), p.gross.toFixed(2), p.deductions.toFixed(2), p.net.toFixed(2)
     ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(r => r.join(','))
-    ].join('\n');
-
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const link = document.createElement('a');
     link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
     link.download = `payroll_report_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-
     showToast('Payroll exported successfully', 'success');
   } catch (error) {
     console.error('Export error:', error);
@@ -237,9 +239,9 @@ async function loadPayroll() {
       const employees = empResponse.data.data;
       const payrollData = payResponse.data.data;
 
-      // FIX: Removed .value from state
-      const loggedInUserId = state.user?.user_id;
-      const visibleEmployees = isHR.value ? employees : employees.filter(e => e.user_id === loggedInUserId);
+      // FIX: Match by email instead of user_id
+      const loggedInEmail = state.user?.email;
+      const visibleEmployees = isHR.value ? employees : employees.filter(e => e.email === loggedInEmail);
 
       payroll.value = visibleEmployees.map(emp => {
         const existing = payrollData.find(p => p.emp_id === emp.emp_id);
@@ -251,28 +253,14 @@ async function loadPayroll() {
           const tax = gross * taxRate;
           const net = gross - tax;
           return {
-            ...emp,
-            name,
-            id: 'MT-' + String(emp.emp_id).padStart(3, '0'),
-            hoursWorked: 160,
-            hourlyRate: Math.round(baseSalary / 160),
-            gross,
-            deductions: tax,
-            net,
-            taxRate,
+            ...emp, name, id: 'MT-' + String(emp.emp_id).padStart(3, '0'),
+            hoursWorked: 160, hourlyRate: Math.round(baseSalary / 160), gross, deductions: tax, net, taxRate,
             color: getDepartmentColor(emp.department)
           };
         } else {
           return {
-            ...emp,
-            name,
-            id: 'MT-' + String(emp.emp_id).padStart(3, '0'),
-            hoursWorked: 0,
-            hourlyRate: 0,
-            gross: 0,
-            deductions: 0,
-            net: 0,
-            taxRate: 0,
+            ...emp, name, id: 'MT-' + String(emp.emp_id).padStart(3, '0'),
+            hoursWorked: 0, hourlyRate: 0, gross: 0, deductions: 0, net: 0, taxRate: 0,
             color: getDepartmentColor(emp.department)
           };
         }
@@ -315,7 +303,8 @@ onMounted(() => {
 .pay-emp-id { font-size: 12px; color: #5a5a7a; }
 .pay-net-cell { font-weight: 700; color: #0f6e6e; }
 .pay-dept-tag { display: inline-block; font-size: 11px; font-weight: 600; color: #505081; background: rgba(80,80,129,0.1); padding: 2px 8px; border-radius: 999px; margin-top: 2px; }
-.pay-table-footer { padding: 12px 20px; font-size: 12px; color: #5a5a7a; border-top: 1px solid #d8dce6; }
+.pay-table-footer { padding: 12px 20px; font-size: 12px; color: #5a5a7a; border-top: 1px solid #d8dce6; display: flex; justify-content: space-between; align-items: center; }
+.pagination-controls { display: flex; align-items: center; gap: 10px; }
 
 .pay-modal { position: fixed; inset: 0; background: rgba(15,14,71,0.4); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 1050; }
 .pay-modal.open { display: flex; }

@@ -1,4 +1,4 @@
-<!-- src/views/Attendance.vue -->
+<!-- frontend-vue/src/views/Attendance.vue -->
 <template>
   <div class="att-main-content">
     <div class="att-page-header">
@@ -80,16 +80,15 @@
       </div>
     </template>
 
-    <!-- Main Table Area -->
-    <div class="att-card card shadow-sm">
+    <!-- HR View: Today's Roster (Paginated) -->
+    <div class="att-card card shadow-sm mb-4" v-if="isHR">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <h5 class="att-card-title mb-0">
-            <i class="bi bi-list-ul"></i> 
-            {{ isHR ? "Today's Employee Roster" : 'My Attendance History' }}
+            <i class="bi bi-list-ul"></i> Today's Employee Roster
           </h5>
           <div class="att-search-box">
-            <input type="text" v-model="search" placeholder="Search employee..." v-if="isHR" />
+            <input type="text" v-model="search" placeholder="Search employee..." />
           </div>
         </div>
 
@@ -103,59 +102,66 @@
               <tr>
                 <th>Employee</th>
                 <th>Department</th>
-                <th>{{ isHR ? 'Today Status' : 'Date' }}</th>
-                <th>{{ isHR ? 'Check In' : 'Status' }}</th>
-                <th v-if="!isHR">Check Out</th>
-                <th v-if="!isHR">Hours</th>
-                <th v-if="isHR">Action</th>
+                <th>Today Status</th>
+                <th>Check In</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              <!-- HR View: One row per employee for TODAY -->
-              <template v-if="isHR">
-                <tr v-for="emp in filteredRoster" :key="emp.emp_id">
-                  <td>
-                    <div class="att-employee-cell">
-                      <div class="att-employee-avatar" :style="{ background: emp.color }">{{ emp.initials }}</div>
-                      <span class="att-employee-name">{{ emp.name }}</span>
-                    </div>
-                  </td>
-                  <td>{{ emp.department }}</td>
-                  <td>
-                    <span class="att-status-badge" :class="statusClass(emp.todayStatus)">
-                      <span class="att-status-dot"></span> {{ formatStatus(emp.todayStatus) }}
-                    </span>
-                  </td>
-                  <td>{{ emp.checkIn ? formatTime(emp.checkIn) : '—' }}</td>
-                  <td><button class="btn btn-sm btn-outline-primary" @click="viewHistory(emp)"><i class="bi bi-eye"></i> History</button></td>
-                </tr>
-              </template>
-
-              <!-- Employee View: All their past records -->
-              <template v-else>
-                <tr v-for="record in myHistory" :key="record.attendance_id">
-                  <td>
-                    <div class="att-employee-cell">
-                      <div class="att-employee-avatar" :style="{ background: record.color }">{{ record.initials }}</div>
-                      <span class="att-employee-name">{{ record.employeeName }}</span>
-                    </div>
-                  </td>
-                  <td>{{ record.department }}</td>
-                  <td>{{ formatDate(record.attendance_date) }}</td>
-                  <td>
-                    <span class="att-status-badge" :class="statusClass(record.status)">
-                      <span class="att-status-dot"></span> {{ formatStatus(record.status) }}
-                    </span>
-                  </td>
-                  <td>{{ record.check_out_time ? formatTime(record.check_out_time) : '—' }}</td>
-                  <td>{{ record.hours_worked ? record.hours_worked + 'h' : '—' }}</td>
-                </tr>
-                <tr v-if="myHistory.length === 0">
-                  <td colspan="6" class="text-center text-muted py-4">No attendance records found for you.</td>
-                </tr>
-              </template>
+              <tr v-for="emp in paginatedRoster" :key="emp.emp_id">
+                <td>
+                  <div class="att-employee-cell">
+                    <div class="att-employee-avatar" :style="{ background: emp.color }">{{ emp.initials }}</div>
+                    <span class="att-employee-name">{{ emp.name }}</span>
+                  </div>
+                </td>
+                <td>{{ emp.department }}</td>
+                <td>
+                  <span class="att-status-badge" :class="statusClass(emp.todayStatus)">
+                    <span class="att-status-dot"></span> {{ formatStatus(emp.todayStatus) }}
+                  </span>
+                </td>
+                <td>{{ emp.checkIn ? formatTime(emp.checkIn) : '—' }}</td>
+                <td><button class="btn btn-sm btn-outline-primary" @click="viewHistory(emp)"><i class="bi bi-eye"></i> Calendar</button></td>
+              </tr>
             </tbody>
           </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="att-pagination" v-if="filteredRoster.length > itemsPerPage">
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 1" @click="currentPage--">Prev</button>
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Employee View: My Attendance Calendar -->
+    <div class="att-card card shadow-sm" v-if="!isHR">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="att-card-title mb-0"><i class="bi bi-calendar-week"></i> My Attendance History</h5>
+          <div class="calendar-nav">
+            <button class="btn btn-sm btn-outline-secondary" @click="prevMonth"><i class="bi bi-chevron-left"></i></button>
+            <span class="current-month">{{ calendarMonthYear }}</span>
+            <button class="btn btn-sm btn-outline-secondary" @click="nextMonth"><i class="bi bi-chevron-right"></i></button>
+          </div>
+        </div>
+        
+        <div class="calendar-grid">
+          <div class="calendar-weekday">Sun</div>
+          <div class="calendar-weekday">Mon</div>
+          <div class="calendar-weekday">Tue</div>
+          <div class="calendar-weekday">Wed</div>
+          <div class="calendar-weekday">Thu</div>
+          <div class="calendar-weekday">Fri</div>
+          <div class="calendar-weekday">Sat</div>
+          
+          <div v-for="(day, index) in calendarDays" :key="index" class="calendar-day" :class="{ 'blank': !day.date, [day.statusClass]: day.statusClass }">
+            <span v-if="day.date" class="day-number">{{ day.day }}</span>
+            <span v-if="day.status" class="day-status">{{ day.status }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -194,7 +200,6 @@
                 </select>
               </div>
               
-              <!-- FIX: Strict Dropdown Selects instead of clunky Time Wheels -->
               <div class="row" v-if="logForm.status === 'present' || logForm.status === 'late' || logForm.status === 'half_day'">
                 <div class="col-md-6 mb-3">
                   <label class="form-label fw-semibold">Check In Time</label>
@@ -226,33 +231,34 @@
       </div>
     </div>
 
-    <!-- Employee History Modal (For HR) -->
+    <!-- Employee History Calendar Modal (For HR) -->
     <div class="modal fade" id="attHistoryModal" tabindex="-1" ref="historyModal">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header" style="background:#272757;color:white;">
-            <h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>History: {{ selectedEmp?.name }}</h5>
+            <h5 class="modal-title"><i class="bi bi-calendar-week me-2"></i>Attendance Calendar: {{ selectedEmp?.name }}</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <div class="table-responsive">
-              <table class="table table-sm">
-                <thead>
-                  <tr><th>Date</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Hours</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="rec in selectedEmpHistory" :key="rec.attendance_id">
-                    <td>{{ formatDate(rec.attendance_date) }}</td>
-                    <td><span class="badge" :class="statusClass(rec.status)">{{ formatStatus(rec.status) }}</span></td>
-                    <td>{{ formatTime(rec.check_in_time) }}</td>
-                    <td>{{ formatTime(rec.check_out_time) }}</td>
-                    <td>{{ rec.hours_worked || 0 }}h</td>
-                  </tr>
-                  <tr v-if="selectedEmpHistory.length === 0">
-                    <td colspan="5" class="text-center text-muted">No history found.</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <button class="btn btn-sm btn-outline-secondary" @click="prevModalMonth"><i class="bi bi-chevron-left"></i></button>
+              <span class="current-month">{{ modalCalendarMonthYear }}</span>
+              <button class="btn btn-sm btn-outline-secondary" @click="nextModalMonth"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            
+            <div class="calendar-grid">
+              <div class="calendar-weekday">Sun</div>
+              <div class="calendar-weekday">Mon</div>
+              <div class="calendar-weekday">Tue</div>
+              <div class="calendar-weekday">Wed</div>
+              <div class="calendar-weekday">Thu</div>
+              <div class="calendar-weekday">Fri</div>
+              <div class="calendar-weekday">Sat</div>
+              
+              <div v-for="(day, index) in modalCalendarDays" :key="index" class="calendar-day" :class="{ 'blank': !day.date, [day.statusClass]: day.statusClass }">
+                <span v-if="day.date" class="day-number">{{ day.day }}</span>
+                <span v-if="day.status" class="day-status">{{ day.status }}</span>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -281,7 +287,6 @@ const selectedEmp = ref(null);
 
 const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-// FIX: Generate today's date locally to prevent UTC timezone shifting
 const getLocalTodayStr = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -290,6 +295,10 @@ const getLocalTodayStr = () => {
   return `${year}-${month}-${day}`;
 };
 const todayStr = getLocalTodayStr();
+
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = 10;
 
 const checkInTimes = ['07:00:00', '07:30:00', '08:00:00', '08:30:00', '09:00:00', '09:30:00', '10:00:00'];
 const checkOutTimes = ['16:00:00', '16:30:00', '17:00:00', '17:30:00', '18:00:00', '18:30:00', '19:00:00'];
@@ -304,15 +313,28 @@ const logForm = ref({
 
 const stats = ref({ present: 0, absent: 0, leave: 0, rate: 0 });
 
+// Calendar State
+const calendarDate = ref(new Date());
+const modalCalendarDate = ref(new Date());
+
 const filteredRoster = computed(() => {
   if (!search.value) return employeeList.value;
   const q = search.value.toLowerCase();
   return employeeList.value.filter(e => e.name.toLowerCase().includes(q) || e.department.toLowerCase().includes(q));
 });
 
+const totalPages = computed(() => Math.ceil(filteredRoster.value.length / itemsPerPage));
+
+const paginatedRoster = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return filteredRoster.value.slice(start, end);
+});
+
 const myHistory = computed(() => {
   if (!state.user) return [];
-  const myEmp = employeeList.value.find(e => e.user_id === state.user.user_id);
+  // FIX: Match by email instead of user_id
+  const myEmp = employeeList.value.find(e => e.email === state.user.email);
   if (!myEmp) return [];
   
   return allRecords.value
@@ -332,7 +354,6 @@ const chartData = computed(() => {
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    // Local YYYY-MM-DD for chart comparison
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -351,7 +372,6 @@ const chartData = computed(() => {
   return days;
 });
 
-// FIX: Calculate hours dynamically based on strict dropdown selections
 const calculatedHours = computed(() => {
   if (!logForm.value.checkIn || !logForm.value.checkOut) return 0;
   const [inH, inM] = logForm.value.checkIn.split(':').map(Number);
@@ -360,32 +380,62 @@ const calculatedHours = computed(() => {
   return diff > 0 ? diff.toFixed(1) : 0;
 });
 
-// FIX: Robust date formatter that forces local time parsing
+// Calendar Helpers
 function normalizeDate(dateInput) {
   if (!dateInput) return null;
   if (typeof dateInput === 'string' && dateInput.length === 10) return dateInput;
-  
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return null;
-  
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
+function getCalendarDays(targetDate, historyRecords) {
+  const year = targetDate.value.getFullYear();
+  const month = targetDate.value.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push({ blank: true });
+  
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const record = historyRecords.value.find(r => r.attendance_date === dateStr);
+    
+    days.push({
+      day: d,
+      date: dateStr,
+      status: record ? formatStatus(record.status) : null,
+      statusClass: record ? statusClass(record.status) : null
+    });
+  }
+  return days;
+}
+
+const calendarDays = computed(() => getCalendarDays(calendarDate, myHistory));
+const modalCalendarDays = computed(() => getCalendarDays(modalCalendarDate, selectedEmpHistory));
+
+const calendarMonthYear = computed(() => calendarDate.value.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }));
+const modalCalendarMonthYear = computed(() => modalCalendarDate.value.toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' }));
+
+function prevMonth() { calendarDate.value = new Date(calendarDate.value.getFullYear(), calendarDate.value.getMonth() - 1, 1); }
+function nextMonth() { calendarDate.value = new Date(calendarDate.value.getFullYear(), calendarDate.value.getMonth() + 1, 1); }
+function prevModalMonth() { modalCalendarDate.value = new Date(modalCalendarDate.value.getFullYear(), modalCalendarDate.value.getMonth() - 1, 1); }
+function nextModalMonth() { modalCalendarDate.value = new Date(modalCalendarDate.value.getFullYear(), modalCalendarDate.value.getMonth() + 1, 1); }
+
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   const normalized = normalizeDate(dateStr);
   if (!normalized) return '—';
-  // Create a local date object to display it properly
   const [y, m, d] = normalized.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function formatTime(timeStr) {
   if (!timeStr) return '—';
-  // Format HH:MM:SS to HH:MM
   return String(timeStr).substring(0, 5);
 }
 
@@ -411,7 +461,6 @@ function getDepartmentColor(dept) {
 }
 
 function handleStatusChange() {
-  // If status doesn't require times, clear them
   if (logForm.value.status === 'absent' || logForm.value.status === 'on_leave') {
     logForm.value.checkIn = '';
     logForm.value.checkOut = '';
@@ -426,6 +475,7 @@ function openLogModal() {
 
 function viewHistory(emp) {
   selectedEmp.value = emp;
+  modalCalendarDate.value = new Date(); // Reset to current month
   const modal = new Modal(document.getElementById('attHistoryModal'));
   modal.show();
 }
@@ -442,7 +492,6 @@ async function submitAttendance() {
     return;
   }
 
-  // FIX: Prevent logging attendance for weekends
   const dateObj = new Date(date);
   const day = dateObj.getDay();
   if (day === 0 || day === 6) {
@@ -450,7 +499,6 @@ async function submitAttendance() {
     return;
   }
 
-  // If Present/Late, ensure times are selected
   if ((status === 'present' || status === 'late' || status === 'half_day') && (!checkIn || !checkOut)) {
     showToast('Please select Check In and Check Out times', 'danger');
     return;
@@ -459,12 +507,8 @@ async function submitAttendance() {
   saving.value = true;
   try {
     await api.post('/attendance', {
-      emp_id: employeeId,
-      attendance_date: date,
-      status: status,
-      check_in_time: checkIn || null,
-      check_out_time: checkOut || null,
-      hours_worked: calculatedHours.value || 0,
+      emp_id: employeeId, attendance_date: date, status: status, check_in_time: checkIn || null,
+      check_out_time: checkOut || null, hours_worked: calculatedHours.value || 0,
     });
     
     showToast('Attendance logged successfully', 'success');
@@ -486,12 +530,8 @@ function exportAttendance() {
     const rows = allRecords.value.map(r => {
       const emp = employeeList.value.find(e => e.emp_id === r.emp_id);
       return [
-        `"${emp ? emp.name : 'Unknown'}"`,
-        `"${formatDate(r.attendance_date)}"`,
-        `"${formatStatus(r.status)}"`,
-        `"${formatTime(r.check_in_time)}"`,
-        `"${formatTime(r.check_out_time)}"`,
-        r.hours_worked || 0
+        `"${emp ? emp.name : 'Unknown'}"`, `"${formatDate(r.attendance_date)}"`, `"${formatStatus(r.status)}"`,
+        `"${formatTime(r.check_in_time)}"`, `"${formatTime(r.check_out_time)}"`, r.hours_worked || 0
       ];
     });
 
@@ -524,7 +564,6 @@ async function loadData() {
     }
 
     if (attResponse.data.success) {
-      // FIX: Normalize dates right when we fetch them using local time
       allRecords.value = attResponse.data.data.map(r => ({
         ...r,
         attendance_date: normalizeDate(r.attendance_date)
@@ -552,9 +591,7 @@ async function loadData() {
       });
       
       stats.value = {
-        present,
-        absent,
-        leave,
+        present, absent, leave,
         rate: totalRecords > 0 ? Math.round((presentRecords / totalRecords) * 100) : 0
       };
     }
@@ -609,11 +646,9 @@ onMounted(() => {
 .att-table { margin: 0; }
 .att-table thead th { background: #f0f2f7; color: #1a1a2e; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #d8dce6; padding: 10px 14px; }
 .att-table tbody td { padding: 12px 14px; vertical-align: middle; border-bottom: 1px solid #d8dce6; font-size: 14px; }
-
 .att-employee-cell { display: flex; align-items: center; gap: 10px; }
 .att-employee-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; color: white; flex-shrink: 0; }
 .att-employee-name { font-weight: 500; }
-
 .att-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; }
 .att-status-badge .att-status-dot { width: 6px; height: 6px; border-radius: 50%; }
 .att-status-badge.active { background: #e8f5e9; color: #1b5e20; }
@@ -626,4 +661,24 @@ onMounted(() => {
 .att-status-badge.late .att-status-dot { background: #1a73e8; }
 .att-status-badge.probation { background: #f0f2f7; color: #5a5a7a; }
 .att-status-badge.probation .att-status-dot { background: #8686ac; }
+
+.att-pagination { margin-top: 20px; display: flex; justify-content: center; align-items: center; gap: 15px; font-size: 14px; }
+
+/* Calendar Styles */
+.calendar-nav { display: flex; align-items: center; gap: 15px; }
+.current-month { font-weight: 600; font-size: 16px; color: #272757; min-width: 150px; text-align: center; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+.calendar-weekday { text-align: center; font-weight: 600; color: #5a5a7a; font-size: 12px; padding-bottom: 10px; }
+.calendar-day { min-height: 80px; border: 1px solid #d8dce6; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; background: #fff; transition: 0.2s; }
+.calendar-day.blank { background: transparent; border: none; }
+.calendar-day .day-number { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+.calendar-day .day-status { font-size: 11px; font-weight: 600; text-align: center; padding: 2px 0; border-radius: 4px; margin-top: auto; }
+.calendar-day.active { border-color: #43a047; }
+.calendar-day.active .day-status { background: #e8f5e9; color: #1b5e20; }
+.calendar-day.absent { border-color: #e53935; }
+.calendar-day.absent .day-status { background: #ffebee; color: #b71c1c; }
+.calendar-day.on-leave { border-color: #fb8c00; }
+.calendar-day.on-leave .day-status { background: #fff3e0; color: #bf360c; }
+.calendar-day.late { border-color: #1a73e8; }
+.calendar-day.late .day-status { background: #e3f2fd; color: #0d47a1; }
 </style>
