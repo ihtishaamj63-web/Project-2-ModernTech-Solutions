@@ -1,34 +1,27 @@
-// src/stores/auth.js
-import { reactive, computed } from 'vue';
+// frontend-vue/src/stores/auth.js
+import { reactive } from 'vue';
 import api from '../api/axios';
 
 const state = reactive({
   user: JSON.parse(localStorage.getItem('authUser') || 'null'),
   token: localStorage.getItem('token'),
-  loading: false,
-  error: null,
 });
 
 export function useAuth() {
-  async function login(username, password) {
-    state.loading = true;
-    state.error = null;
-    try {
-      const response = await api.post('/auth/login', { username, password });
-      if (response.data.success) {
-        const { token, user } = response.data.data;
-        state.token = token;
-        state.user = user;
-        localStorage.setItem('token', token);
-        localStorage.setItem('authUser', JSON.stringify(user));
-        return { success: true };
-      }
-    } catch (error) {
-      state.error = error.response?.data?.error || 'Login failed';
-      return { success: false, error: state.error };
-    } finally {
-      state.loading = false;
-    }
+  function login(username, password) {
+    return api.post('/auth/login', { username, password })
+      .then(response => {
+        if (response.data.success) {
+          state.token = response.data.data.token;
+          state.user = response.data.data.user;
+          localStorage.setItem('token', state.token);
+          localStorage.setItem('authUser', JSON.stringify(state.user));
+          return { success: true };
+        }
+      })
+      .catch(error => {
+        return { success: false, error: error.response?.data?.error || 'Server error' };
+      });
   }
 
   function logout() {
@@ -36,31 +29,9 @@ export function useAuth() {
     state.user = null;
     localStorage.removeItem('token');
     localStorage.removeItem('authUser');
-    window.location.href = '/login';
   }
 
-  function isLoggedIn() {
-    return state.token !== null;
-  }
+  const isHR = () => state.user?.role === 'hr_staff' || state.user?.role === 'HR Manager' || state.user?.role === 'HR Admin';
 
-  const isHR = computed(() => {
-    const role = state.user?.role;
-    return role === 'hr_staff' || role === 'HR Manager' || role === 'HR Admin';
-  });
-
-  const userName = computed(() => {
-    if (state.user) {
-      return state.user.name || state.user.username || 'User';
-    }
-    return 'User';
-  });
-
-  return {
-    state,
-    login,
-    logout,
-    isLoggedIn,
-    isHR,
-    userName,
-  };
+  return { state, login, logout, isHR };
 }
